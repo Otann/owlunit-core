@@ -13,7 +13,7 @@ import com.owlunit.core.ii.NotFoundException
 class IiSpecs extends Specification {
 
   var dao: IiDao = null
-  step { dao = IiDao.local("ii-core/target/db") }
+  step { dao = IiDao.local("target/db") }
 
   "New Ii" should {
     "have 0 id" in {
