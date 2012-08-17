@@ -1,9 +1,5 @@
-package core
-
 import sbt._
 import Keys._
-import sbt.Package._
-import java.util.jar.Attributes.Name._
 
 object CoreBuild extends Build {
 
@@ -26,7 +22,7 @@ object CoreBuild extends Build {
 
   override lazy val settings = super.settings ++ Seq(
     organization := "com.owlunit",
-    version := "0.1-SNAPSHOT",
+    version := "0.2-SNAPSHOT",
     scalaVersion := "2.9.1",
     resolvers ++= Seq(ScalaToolsSnapshots),
     scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-unchecked"),
@@ -38,7 +34,7 @@ object CoreBuild extends Build {
   /////////////////////
   // Dependencies
   /////////////////////
-  
+
   object Dependency {
 
     val specs2      = "org.specs2"                %% "specs2"               % "1.9"    % "test"

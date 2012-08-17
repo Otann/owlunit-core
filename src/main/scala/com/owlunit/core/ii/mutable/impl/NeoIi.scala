@@ -17,6 +17,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
 
   def id = node.map(_.getId).getOrElse(0)
 
+  // TODO(Anton) Since this is mutable ii why collections are immutable?
   var meta: Option[Map[String, String]] = None
   var items: Option[Map[Ii, Double]] = None
 
@@ -27,10 +28,25 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
     val tx = graph.beginTx()
     try {
 
+      // create backed node is there is need for one
       if (this.node.isEmpty) {
         this.node = Some(graph.createNode())
       }
 
+      // remove obsolete properties
+      for {
+        n <- this.node
+        metaMap <- meta
+      } {
+        val properties = n.getPropertyKeys.iterator()
+        while (properties.hasNext) {
+          val key = properties.next()
+          if (!metaMap.contains(key)) {
+            n.removeProperty(key)
+          }
+        }
+      }
+      // persist all meta to properties
       for {
         n <- this.node
         metaMap <- meta
@@ -40,6 +56,22 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
         index.add(n, key, value)
       }
 
+      // remove obsolete connections
+      for {
+        thisNode <- this.node
+        itemsMap <- items
+      } {
+        val relationships = thisNode.getRelationships.iterator()
+        while (relationships.hasNext) {
+          val relationship = relationships.next()
+          val itemsNodes = itemsMap.keys.map(_.node).flatten.toSet
+          if (!itemsNodes.contains(relationship.getOtherNode(thisNode))) {
+            relationship.delete()
+          }
+        }
+      }
+      // persist all connections to relations
+      // NB: only for those which have been persisted once
       for {
         itemsMap <- items
         (item: NeoIi, weight) <- itemsMap
@@ -75,9 +107,9 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
         n <- this.node
       } {
         index.remove(n)
-        val rels = n.getRelationships.iterator()
-        while (rels.hasNext) {
-          rels.next().delete()
+        val relationships = n.getRelationships.iterator()
+        while (relationships.hasNext) {
+          relationships.next().delete()
         }
         
         n.delete()
@@ -103,9 +135,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
   }
 
   private def getMeta(node: Node): Map[String, String] = {
-    import collection.mutable.Map
-
-    val newMeta = Map[String, String]()
+    val newMeta = collection.mutable.Map[String, String]()
     val iterator = node.getPropertyKeys.iterator()
 
     while (iterator.hasNext) {
@@ -139,6 +169,19 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
   def setItem(component: Ii, weight: Double) = {
     loadItems
     items = items.map(_ + (component -> weight))
+    this
+  }
+
+
+  def removeMeta(key: String) = {
+    loadMeta
+    meta = meta.map(_ - key)
+    this
+  }
+
+  def removeItem(component: Ii) = {
+    loadItems
+    items = items.map(_ - component)
     this
   }
 

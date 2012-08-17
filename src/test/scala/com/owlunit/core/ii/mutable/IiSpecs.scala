@@ -1,7 +1,6 @@
 package com.owlunit.core.ii.mutable
 
 import org.specs2.mutable.Specification
-import org.specs2.specification.AfterExample
 import com.owlunit.core.ii.NotFoundException
 
 /**
@@ -40,10 +39,19 @@ class IiSpecs extends Specification {
       val ii = dao.create.setMeta("key", "value")
       ii.meta.get must havePair("key" -> "value")
     }
-    "have item after addItem" in {
+    "have item after setItem" in {
       val item = dao.create.save
       val ii = dao.create.setItem(item, 1.0)
       ii.items.get must havePair(item -> 1.0)
+    }
+    "have lost meta after removeMeta" in {
+      val ii = dao.create.setMeta("key", "value").removeMeta("key")
+      ii.meta.get must not haveKey("key")
+    }
+    "have lost item after removeItem" in {
+      val item = dao.create.save
+      val ii = dao.create.setItem(item, 1.0).removeItem(item)
+      ii.items.get must not haveKey(item)
     }
   }
 
@@ -63,6 +71,19 @@ class IiSpecs extends Specification {
       val loaded = dao.load(saved.id).loadItems
       loaded.items.get must havePair(component -> 1.0)
     }
+    "have persisted meta changes after removeMeta" in {
+      val saved = dao.create.setMeta("key", "value").save
+      saved.removeMeta("key").save
+      val loaded = dao.load(saved.id).loadMeta
+      loaded.meta.get must not haveKey("key")
+    }
+    "have persisted item changes after removeItem" in {
+      val component = dao.create.save
+      val saved = dao.create.setItem(component, 1.0).save
+      saved.removeItem(component).save
+      val loaded = dao.load(saved.id).loadItems
+      loaded.items.get must not haveKey(component)
+    }
     "be loadable by id" in {
       val saved = dao.create.save
       val loaded = dao.load(saved.id)
@@ -81,6 +102,5 @@ class IiSpecs extends Specification {
   }
 
   step { dao.shutdown() }
-  implicit def *** {} // IDEA reporting error without this
 
 }
