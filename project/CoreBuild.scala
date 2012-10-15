@@ -27,7 +27,7 @@ object CoreBuild extends Build {
     resolvers ++= Seq(ScalaToolsSnapshots),
     scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-unchecked"),
     javacOptions ++= Seq("-Xlint:unchecked"),
-    publishTo := Some(Resolver.file("file",  new File( "/Users/anton/Dev/Owls/repo/owlunit.github.com/repo/ivy/" )))
+    publishTo := Some(Resolver.file("file",  new File( "../../owlunit.github.com/repo/ivy/" )))
   )
 
 
@@ -39,12 +39,12 @@ object CoreBuild extends Build {
 
     val specs2      = "org.specs2"                %% "specs2"               % "1.9"    % "test"
 
-    val neo4j       = "org.neo4j"                 %  "neo4j"                % "1.6"
-    val neo4jREST   = "org.neo4j"                 %  "neo4j-rest-graphdb"   % "1.6"
+    val neo4j       = "org.neo4j"                 %  "neo4j"                % "1.8"
+    val neo4jREST   = "org.neo4j"                 %  "neo4j-rest-graphdb"   % "1.8"
     // val neo4jRemote = "org.neo4j"                 %  "neo4j-remote-graphdb" % "0.7"
 
-    // val logback     = "ch.qos.logback"            %  "logback-classic"     % "0.9.28"
-    // val slf4s       = "com.weiglewilczek.slf4s"   %% "slf4s"               % "1.0.7"
+    val logback     = "ch.qos.logback"            %  "logback-classic"     % "1.0.6"
+    val slf4s       = "com.weiglewilczek.slf4s"   %% "slf4s"               % "1.0.7"
 
   }
 
