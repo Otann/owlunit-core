@@ -1,7 +1,7 @@
 import sbt._
 import Keys._
 
-object CoreBuild extends Build {
+object IiCoreBuild extends Build {
 
   lazy val root = Project(
     id = "core",
@@ -22,7 +22,7 @@ object CoreBuild extends Build {
 
   override lazy val settings = super.settings ++ Seq(
     organization := "com.owlunit",
-    version := "0.2-SNAPSHOT",
+    version := "0.3-SNAPSHOT",
     scalaVersion := "2.9.1",
     resolvers ++= Seq(ScalaToolsSnapshots),
     scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-unchecked"),

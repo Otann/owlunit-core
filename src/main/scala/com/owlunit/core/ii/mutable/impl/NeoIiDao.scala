@@ -18,7 +18,7 @@ private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao w
   def init() { ShutdownHookThread { shutdown() } }
   def shutdown() { graph.shutdown() }
 
-  def create = new NeoIi(None, graph)
+  def create = new NeoIi(graph)
 
   def load(id: Long) = {
     try {
@@ -33,7 +33,7 @@ private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao w
     val iterator = index.get(key, value).iterator
     while (iterator.hasNext) {
       val node = iterator.next()
-      result += new NeoIi(node, graph);
+      result += new NeoIi(node, graph)
     }
     result.toList
   }

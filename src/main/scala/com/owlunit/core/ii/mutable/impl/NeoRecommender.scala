@@ -24,10 +24,7 @@ private [mutable] trait NeoRecommender extends Recommender with Helpers {
     )
   } getOrElse 0
 
-  def getSimilar(a: Ii, key: String) = a.loadItems.items match {
-    case Some(items) => getSimilar(items, key)
-    case None => Map.empty
-  }
+  def getSimilar(a: Ii, key: String) = getSimilar(a.items, key)
 
   def getSimilar(pattern: Map[Ii, Double], key: String, limit: Int) = {
     val candidates = MutableMap[Node, Double]()
@@ -69,7 +66,7 @@ private [mutable] trait NeoRecommender extends Recommender with Helpers {
       val aWeight = a.getOrElse(item, 0.0) / aOverall
       val bWeight = b.getOrElse(item, 0.0) / bOverall
 
-      min += aWeight min bWeight;
+      min += aWeight min bWeight
     }
 
     min * 100

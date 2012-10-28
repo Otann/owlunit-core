@@ -8,20 +8,45 @@ import org.neo4j.graphdb._
  *         Owls Proprietary
  */
 
-
 private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) extends Ii with Helpers {
 
+  def this(graph: GraphDatabaseService) = this(None, graph)
   def this(node: Node, graph: GraphDatabaseService) = this(Some(node), graph)
 
-  def index = graph.index().forNodes(IndexName)
+  private def index = graph.index().forNodes(IndexName)
+
+  private var metaOption: Option[Map[String, String]] = None
+  private var itemsOption: Option[Map[Ii, Double]] = None
 
   def id = node.map(_.getId).getOrElse(0)
 
-  // TODO(Anton) Since this is mutable ii why collections are immutable?
-  var meta: Option[Map[String, String]] = None
-  var items: Option[Map[Ii, Double]] = None
+  def meta: Map[String, String] = metaOption match {
 
-  var removedMeta = Map[String, String]()
+    case Some(existing) => existing
+
+    case None => {
+      val initialized = node match {
+        case Some(n) => getMeta(n)
+        case None    => Map[String, String]()
+      }
+      metaOption = Some(initialized)
+      initialized
+    }
+  }
+
+  def items: Map[Ii, Double] = itemsOption match {
+
+    case Some(existing) => existing
+
+    case None => {
+      val initialized = node match {
+        case Some(n) => getItems(n)
+        case None    => Map[Ii, Double]()
+      }
+      itemsOption = Some(initialized)
+      initialized
+    }
+  }
 
   def save:Ii = {
 
@@ -34,9 +59,10 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
       }
 
       // remove obsolete properties
+      // pass this part if no meta referenced
       for {
-        n <- this.node
-        metaMap <- meta
+        n       <- this.node
+        metaMap <- metaOption
       } {
         val properties = n.getPropertyKeys.iterator()
         while (properties.hasNext) {
@@ -46,10 +72,12 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
           }
         }
       }
+
       // persist all meta to properties
+      // pass this part if no meta referenced
       for {
-        n <- this.node
-        metaMap <- meta
+        n            <- this.node
+        metaMap      <- metaOption
         (key, value) <- metaMap
       } {
         n.setProperty(key, value)
@@ -57,9 +85,10 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
       }
 
       // remove obsolete connections
+      // pass this part if no items referenced
       for {
         thisNode <- this.node
-        itemsMap <- items
+        itemsMap <- itemsOption
       } {
         val relationships = thisNode.getRelationships.iterator()
         while (relationships.hasNext) {
@@ -70,10 +99,12 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
           }
         }
       }
+
       // persist all connections to relations
+      // pass this part if no items referenced
       // NB: only for those which have been persisted once
       for {
-        itemsMap <- items
+        itemsMap              <- itemsOption
         (item: NeoIi, weight) <- itemsMap
         thisNode <- this.node
         thatNode <- item.node
@@ -111,7 +142,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
         while (relationships.hasNext) {
           relationships.next().delete()
         }
-        
+
         n.delete()
       }
 
@@ -122,16 +153,6 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
       tx.finish()
     }
 
-  }
-
-  def loadMeta = {
-    if (meta.isEmpty) {
-      meta = this.node match {
-        case None           => Some(Map())
-        case Some(thisNode) => Some(getMeta(thisNode))
-      }
-    }
-    this
   }
 
   private def getMeta(node: Node): Map[String, String] = {
@@ -145,43 +166,29 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
     newMeta.toMap
   }
 
-  def loadItems = {
-    if (items.isEmpty) {
-      items = this.node match {
-        case None           => Some(Map())
-        case Some(thisNode) => Some(getItems(thisNode))
-      }
-    }
-    this
-  }
-  
   private def getItems(node: Node): Map[Ii, Double] = {
     val nodes = getNodes(node, Direction.OUTGOING, 1)
     nodes.map {case (n, w) => new NeoIi(Some(n), graph) -> w}
   }
 
   def setMeta(key: String, value: String) = {
-    loadMeta
-    meta = meta.map(_ + (key -> value))
+    metaOption = Some(meta + (key -> value))
     this
   }
 
   def setItem(component: Ii, weight: Double) = {
-    loadItems
-    items = items.map(_ + (component -> weight))
+    itemsOption = Some(items + (component -> weight))
     this
   }
 
 
   def removeMeta(key: String) = {
-    loadMeta
-    meta = meta.map(_ - key)
+    metaOption = Some(meta - key)
     this
   }
 
   def removeItem(component: Ii) = {
-    loadItems
-    items = items.map(_ - component)
+    itemsOption = Some(items - component)
     this
   }
 
