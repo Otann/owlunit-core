@@ -13,7 +13,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
   def this(graph: GraphDatabaseService) = this(None, graph)
   def this(node: Node, graph: GraphDatabaseService) = this(Some(node), graph)
 
-  private def index = graph.index().forNodes(IndexName)
+  private def index = graph.index().forNodes(IndexName, IndexParams)
 
   private var metaOption: Option[Map[String, String]] = None
   private var itemsOption: Option[Map[Ii, Double]] = None

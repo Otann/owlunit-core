@@ -2,9 +2,11 @@ package com.owlunit.core.ii.mutable.impl
 
 import collection.mutable.{Map => MutableMap}
 import org.neo4j.graphdb._
+import index.IndexManager
 import org.neo4j.kernel.{Uniqueness, Traversal}
 import traversal.Evaluators
 import com.owlunit.core.ii.mutable.Ii
+import org.neo4j.helpers.collection.MapUtil
 
 /**
  * @author Anton Chebotaev
@@ -16,6 +18,10 @@ import com.owlunit.core.ii.mutable.Ii
 trait Helpers {
 
   private[impl] val IndexName = "ITEMS_INDEX"
+  private[impl] val IndexParams = MapUtil.stringMap(
+    IndexManager.PROVIDER, "lucene",
+    "type", "fulltext",
+    "to_lower_case", "true")
   private[impl] val WeightPropertyName = "WEIGHT"
 
   private[impl] def getNodes(start: Node, direction: Direction, depth: Int): Map[Node, Double] = {

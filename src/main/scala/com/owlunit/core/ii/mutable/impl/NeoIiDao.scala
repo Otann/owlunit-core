@@ -13,7 +13,7 @@ import org.neo4j.graphdb.{Direction, GraphDatabaseService}
 
 private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao with Helpers with NeoRecommender {
 
-  private def index = graph.index().forNodes(IndexName)
+  private def index = graph.index().forNodes(IndexName, IndexParams)
 
   def init() { ShutdownHookThread { shutdown() } }
   def shutdown() { graph.shutdown() }
