@@ -11,7 +11,9 @@ object IiCoreBuild extends Build {
       libraryDependencies ++= Seq(
         Dependency.specs2,
         Dependency.neo4j,
-        Dependency.neo4jREST
+        Dependency.neo4jREST,
+        Dependency.slf4s,
+        Dependency.logback
         )
       )
     )
@@ -39,8 +41,8 @@ object IiCoreBuild extends Build {
 
     val specs2      = "org.specs2"                %% "specs2"               % "1.9"    % "test"
 
-    val neo4j       = "org.neo4j"                 %  "neo4j"                % "1.8"
-    val neo4jREST   = "org.neo4j"                 %  "neo4j-rest-graphdb"   % "1.8"
+    val neo4j       = "org.neo4j"                 %  "neo4j"                % "1.7.2"
+    val neo4jREST   = "org.neo4j"                 %  "neo4j-rest-graphdb"   % "1.7.2"
     // val neo4jRemote = "org.neo4j"                 %  "neo4j-remote-graphdb" % "0.7"
 
     val logback     = "ch.qos.logback"            %  "logback-classic"     % "1.0.6"

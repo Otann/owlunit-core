@@ -2,13 +2,14 @@ package com.owlunit.core.ii.mutable.impl
 
 import com.owlunit.core.ii.mutable.Ii
 import org.neo4j.graphdb._
+import com.weiglewilczek.slf4s.Logging
 
 /**
  * @author Anton Chebotaev
  *         Owls Proprietary
  */
 
-private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) extends Ii with Helpers {
+private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) extends Ii with Helpers with Logging {
 
   def this(graph: GraphDatabaseService) = this(None, graph)
   def this(node: Node, graph: GraphDatabaseService) = this(Some(node), graph)
@@ -109,6 +110,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
         thisNode <- this.node
         thatNode <- item.node
       } {
+
         val rel = getRelation(thisNode, thatNode) match {
           case Some(relation) => relation
           case None => thisNode.createRelationshipTo(thatNode, RelType)
