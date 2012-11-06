@@ -1,8 +1,8 @@
 package com.owlunit.core.ii.immutable
 
 import org.neo4j.graphdb.GraphDatabaseService
-import org.neo4j.rest.graphdb.RestGraphDatabase
 import org.neo4j.kernel.EmbeddedGraphDatabase
+import org.neo4j.rest.graphdb.RestGraphDatabase
 
 /**
  * @author Anton Chebotaev

@@ -2,7 +2,7 @@ package com.owlunit.core.ii.mutable
 
 import org.specs2.mutable.Specification
 import com.owlunit.core.ii.NotFoundException
-import java.io.File
+import scala.sys.process._
 
 /**
  * @author Anton Chebotaev
@@ -12,11 +12,13 @@ import java.io.File
 
 class IiSpecs extends Specification {
 
+  def getRandomIi: Ii = dao.load(dao.create.save.id)
+  def createIi(name: String): Ii = dao.load(dao.create.setMeta("name", name).save.id)
+
   var dao: IiDao = null
   val dbPath = "target/neo4j_db"
 
   step {
-    (new File(dbPath)).delete()
     dao = IiDao.local(dbPath)
   }
 
@@ -46,33 +48,28 @@ class IiSpecs extends Specification {
       val loaded = dao.load(saved.id).setItem(item2, 1.0).save
       dao.load(loaded.id).items must havePair(item2 -> 1.0)
     }
-    "persist another Ii" in {
-      val id = dao.create.save.id
+    "persist used Ii into non-empty ii" in {
+      // create items
+      val a = createIi("a")
+      val b = createIi("b")
 
-      dao.load(id).setItem(dao.create.save, 1).save
-      dao.load(id).setItem(dao.create.save, 1).save
-      dao.load(id).setItem(dao.create.save, 1).save
+      // make b used
+      getRandomIi.setItem(dao.load(b.id), 1.0).save
 
-      dao.load(id).items.size mustEqual 3
+      // make a non-empty
+      dao.load(a.id).setItem(getRandomIi, 1.0).save
+
+      // perform add
+      dao.load(a.id).setItem(dao.load(b.id), 239.0).save
+
+      dao.load(a.id).items.size mustEqual 2
     }
-    "persist after 1000 items" in {
-      val saved = dao.create.save
 
-      var i = 1000
-      while (i > 0) {
-        i -= 1
-        dao.create.save
-      }
-
-      val item = dao.load(dao.create.save.id)
-      dao.load(saved.id).setItem(item, 1.0).save
-      dao.load(saved.id).items must havePair(item -> 1.0)
-    }
   }
 
   step {
     dao.shutdown()
-    (new File(dbPath)).delete()
+    Seq("rm", "-r", dbPath).!!
   }
 
 }

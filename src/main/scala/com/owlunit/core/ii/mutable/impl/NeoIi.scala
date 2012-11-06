@@ -2,14 +2,13 @@ package com.owlunit.core.ii.mutable.impl
 
 import com.owlunit.core.ii.mutable.Ii
 import org.neo4j.graphdb._
-import com.weiglewilczek.slf4s.Logging
 
 /**
  * @author Anton Chebotaev
  *         Owls Proprietary
  */
 
-private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) extends Ii with Helpers with Logging {
+private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) extends Ii with Helpers {
 
   def this(graph: GraphDatabaseService) = this(None, graph)
   def this(node: Node, graph: GraphDatabaseService) = this(Some(node), graph)
@@ -91,10 +90,12 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
         thisNode <- this.node
         itemsMap <- itemsOption
       } {
+        val itemsNodes = itemsMap.keys.map(_.node).flatten.toSet
+
         val relationships = thisNode.getRelationships.iterator()
         while (relationships.hasNext) {
           val relationship = relationships.next()
-          val itemsNodes = itemsMap.keys.map(_.node).flatten.toSet
+
           if (!itemsNodes.contains(relationship.getOtherNode(thisNode))) {
             relationship.delete()
           }
@@ -105,10 +106,10 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
       // pass this part if no items referenced
       // NB: only for those which have been persisted once
       for {
-        itemsMap              <- itemsOption
+        thisNode              <- this.node
+        itemsMap              <- this.itemsOption
         (item: NeoIi, weight) <- itemsMap
-        thisNode <- this.node
-        thatNode <- item.node
+        thatNode              <- item.node
       } {
 
         val rel = getRelation(thisNode, thatNode) match {

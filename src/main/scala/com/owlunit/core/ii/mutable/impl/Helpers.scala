@@ -86,7 +86,7 @@ trait Helpers {
         return Some(aRel)
 
       val bRel = bIter.next()
-      if (bRel.getEndNode == b)
+      if (bRel.getEndNode == a)
         return Some(bRel)
     }
 
