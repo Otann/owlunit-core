@@ -13,7 +13,8 @@ import org.neo4j.graphdb.{Direction, GraphDatabaseService}
 
 private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao with Helpers with NeoRecommender {
 
-  private def index = graph.index().forNodes(IndexName, IndexParams)
+  private def fulltextIndex = graph.index().forNodes(FulltextIndexName, FulltextIndexParams)
+  private def exactIndex = graph.index().forNodes(ExactIndexName, ExactIndexParams)
 
   def init() { ShutdownHookThread { shutdown() } }
   def shutdown() { graph.shutdown() }
@@ -30,7 +31,7 @@ private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao w
 
   def load(key: String, value: String) = {
     val result = ListBuffer[Ii]()
-    val iterator = index.get(key, value).iterator
+    val iterator = exactIndex.get(key, value).iterator
     while (iterator.hasNext) {
       val node = iterator.next()
       result += new NeoIi(node, graph)
@@ -40,7 +41,7 @@ private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao w
 
   def search(key: String, queue: String) = {
     val result = ListBuffer[Ii]()
-    val iterator = index.query(key, queue).iterator()
+    val iterator = fulltextIndex.query(key, queue).iterator()
     while (iterator.hasNext)
       result += new NeoIi(iterator.next(), graph)
 

@@ -35,12 +35,11 @@ class IiSpecs extends Specification {
   }
 
   "Loaded Ii" should {
-    "persist meta" in {
-      val saved = dao.create.setMeta("key1", "value").save
-      val loaded = dao.load(saved.id).setMeta("key2", "value").save
-      dao.load(loaded.id).meta must havePair("key2" -> "value")
+    "load meta" in {
+      val saved = dao.create.setMeta("load-meta-test", "load-meta-test-value").save
+      dao.load(saved.id).meta must havePair("load-meta-test" -> "load-meta-test-value")
     }
-    "persist items" in {
+    "load items" in {
       val item1 = dao.load(dao.create.save.id)
       val item2 = dao.load(dao.create.save.id)
 
@@ -50,8 +49,8 @@ class IiSpecs extends Specification {
     }
     "persist used Ii into non-empty ii" in {
       // create items
-      val a = createIi("a")
-      val b = createIi("b")
+      val a = createIi("persist used Ii into non-empty ii a")
+      val b = createIi("persist used Ii into non-empty ii b")
 
       // make b used
       getRandomIi.setItem(dao.load(b.id), 1.0).save
@@ -64,7 +63,41 @@ class IiSpecs extends Specification {
 
       dao.load(a.id).items.size mustEqual 2
     }
+  }
 
+  "Ii's meta index" should {
+    "be able to load without indexing" in {
+      val key = "key | be able to load without indexing"
+      val value = "value | be able to load without indexing"
+
+      val saved = dao.create.setMeta(key, value).save
+      val loaded = dao.load(key, value)
+      loaded must contain(saved)
+    }
+    "not be able to load with indexing" in {
+      val key = "key | not be able to load with indexing"
+      val value = "value | not be able to load with indexing"
+
+      val saved = dao.create.setMeta(key, value, isIndexedFulltext = true).save
+      val loaded = dao.load(key, value)
+      loaded must not contain(saved)
+    }
+    "be able to search with indexing" in {
+      val key = "key | be able to search with indexing"
+      val value = "value | be able to search with indexing (alloda)"
+
+      val saved = dao.create.setMeta(key, value, isIndexedFulltext = true).save
+      val loaded = dao.search(key, value)
+      loaded must contain(saved)
+    }
+    "not be able to search with indexing" in {
+      val key = "key | not be able to search with indexing"
+      val value = "value | not be able to search with indexing"
+
+      val saved = dao.create.setMeta(key, value).save
+      val loaded = dao.search(key, value)
+      loaded must not contain(saved)
+    }
   }
 
   step {

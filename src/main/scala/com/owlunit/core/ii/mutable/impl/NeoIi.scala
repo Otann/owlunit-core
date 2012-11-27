@@ -13,10 +13,12 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
   def this(graph: GraphDatabaseService) = this(None, graph)
   def this(node: Node, graph: GraphDatabaseService) = this(Some(node), graph)
 
-  private def index = graph.index().forNodes(IndexName, IndexParams)
+  private def fulltextIndex = graph.index().forNodes(FulltextIndexName, FulltextIndexParams)
+  private def exactIndex = graph.index().forNodes(ExactIndexName, ExactIndexParams)
 
-  private var metaOption: Option[Map[String, String]] = None
   private var itemsOption: Option[Map[Ii, Double]] = None
+  private var metaOption: Option[Map[String, String]] = None
+  private var indexedMeta: Set[String] = Set()
 
   def id = node.map(_.getId).getOrElse(0)
 
@@ -69,6 +71,8 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
           val key = properties.next()
           if (!metaMap.contains(key)) {
             n.removeProperty(key)
+            fulltextIndex.remove(n, key)
+            exactIndex.remove(n, key)
           }
         }
       }
@@ -81,6 +85,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
         (key, value) <- metaMap
       } {
         n.setProperty(key, value)
+        val index = if (indexedMeta.contains(key)) fulltextIndex else exactIndex
         index.add(n, key, value)
       }
 
@@ -140,7 +145,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
       for {
         n <- this.node
       } {
-        index.remove(n)
+        fulltextIndex.remove(n)
         val relationships = n.getRelationships.iterator()
         while (relationships.hasNext) {
           relationships.next().delete()
@@ -174,8 +179,13 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
     nodes.map {case (n, w) => new NeoIi(Some(n), graph) -> w}
   }
 
-  def setMeta(key: String, value: String) = {
+  def setMeta(key: String, value: String, isIndexedFulltext: Boolean) = {
     metaOption = Some(meta + (key -> value))
+    if (isIndexedFulltext) {
+      indexedMeta += key
+    } else {
+      indexedMeta -= key
+    }
     this
   }
 
@@ -183,7 +193,6 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
     itemsOption = Some(items + (component -> weight))
     this
   }
-
 
   def removeMeta(key: String) = {
     metaOption = Some(meta - key)

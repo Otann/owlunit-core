@@ -17,11 +17,17 @@ import org.neo4j.helpers.collection.MapUtil
 
 trait Helpers {
 
-  private[impl] val IndexName = "ITEMS_INDEX"
-  private[impl] val IndexParams = MapUtil.stringMap(
+  private[impl] val FulltextIndexName = "FULLTEXT_ITEMS_INDEX"
+  private[impl] val FulltextIndexParams = MapUtil.stringMap(
     IndexManager.PROVIDER, "lucene",
     "type", "fulltext",
     "to_lower_case", "true")
+
+  private[impl] val ExactIndexName = "EXACT_ITEMS_INDEX"
+  private[impl] val ExactIndexParams = MapUtil.stringMap(
+    "type", "exact",
+    "to_lower_case", "true")
+
   private[impl] val WeightPropertyName = "WEIGHT"
 
   private[impl] def getNodes(start: Node, direction: Direction, depth: Int): Map[Node, Double] = {

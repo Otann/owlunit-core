@@ -24,7 +24,7 @@ trait Ii {
   def meta: Map[String, String]
   def items: Map[Ii, Double]
 
-  def setMeta(key: String, value: String): Ii
+  def setMeta(key: String, value: String, isIndexedFulltext: Boolean = false): Ii
   def setItem(component: Ii, weight: Double): Ii
 
   def removeMeta(key: String): Ii
