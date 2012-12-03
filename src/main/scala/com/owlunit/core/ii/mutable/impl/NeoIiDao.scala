@@ -31,11 +31,19 @@ private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao w
 
   def load(key: String, value: String) = {
     val result = ListBuffer[Ii]()
-    val iterator = exactIndex.get(key, value).iterator
-    while (iterator.hasNext) {
-      val node = iterator.next()
+
+    val exactIterator = exactIndex.get(key, value).iterator
+    while (exactIterator.hasNext) {
+      val node = exactIterator.next()
       result += new NeoIi(node, graph)
     }
+
+    val fulltextIterator = fulltextIndex.get(key, value).iterator
+    while (fulltextIterator.hasNext) {
+      val node = fulltextIterator.next()
+      result += new NeoIi(node, graph)
+    }
+
     result.toList
   }
 

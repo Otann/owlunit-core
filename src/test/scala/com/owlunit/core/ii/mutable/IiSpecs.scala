@@ -66,6 +66,14 @@ class IiSpecs extends Specification {
   }
 
   "Ii's meta index" should {
+    "be able to load with indexing" in {
+      val key = "key | not be able to load with indexing"
+      val value = "value | not be able to load with indexing"
+
+      val saved = dao.create.setMeta(key, value, isIndexedFulltext = true).save
+      val loaded = dao.load(key, value)
+      loaded must contain(saved)
+    }
     "be able to load without indexing" in {
       val key = "key | be able to load without indexing"
       val value = "value | be able to load without indexing"
@@ -73,14 +81,6 @@ class IiSpecs extends Specification {
       val saved = dao.create.setMeta(key, value).save
       val loaded = dao.load(key, value)
       loaded must contain(saved)
-    }
-    "not be able to load with indexing" in {
-      val key = "key | not be able to load with indexing"
-      val value = "value | not be able to load with indexing"
-
-      val saved = dao.create.setMeta(key, value, isIndexedFulltext = true).save
-      val loaded = dao.load(key, value)
-      loaded must not contain(saved)
     }
     "be able to search with indexing" in {
       val key = "key | be able to search with indexing"
