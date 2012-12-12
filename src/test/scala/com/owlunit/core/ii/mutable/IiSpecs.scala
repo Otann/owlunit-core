@@ -100,6 +100,27 @@ class IiSpecs extends Specification {
     }
   }
 
+  "Recommender" should {
+    "find indirect component" in {
+      val leaf = dao.create.save
+      val middle = dao.create.setItem(leaf, 1.0).save
+      val root = dao.create.setItem(middle, 1.0).save
+      dao.indirectComponents(root, 2) must not beEmpty
+    }
+    "give zero recommendations for empty ii" in {
+      val ii = dao.create.save
+      dao.getSimilar(ii, "any") must beEmpty
+    }
+    "give at least 1 recommendations for good case (common leaf, right meta)" in {
+      val component = createIi("component").save
+      val rootA = createIi("rootA").setMeta("test", "true").setItem(component, 1.0).save
+      val rootB = createIi("rootB").setMeta("test", "true").setItem(component, 1.0).save
+
+      dao.getSimilar(rootA, "test") must haveKey(rootB)
+    }
+  }
+
+
   step {
     dao.shutdown()
     Seq("rm", "-r", dbPath).!!
