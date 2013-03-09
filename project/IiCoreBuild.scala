@@ -11,7 +11,10 @@ object IiCoreBuild extends Build {
       libraryDependencies ++= Seq(
         Dependency.specs2,
         Dependency.neo4j,
-        Dependency.neo4jREST
+        Dependency.neo4jREST,
+        Dependency.akka,
+        Dependency.slf4s,
+        Dependency.logback
         )
       )
     )
@@ -24,12 +27,13 @@ object IiCoreBuild extends Build {
     organization := "com.owlunit",
     version := "0.3-SNAPSHOT",
     scalaVersion := "2.9.1",
-    resolvers ++= Seq(ScalaToolsSnapshots),
+    resolvers += typesafe,
     scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-unchecked"),
     javacOptions ++= Seq("-Xlint:unchecked"),
     publishTo := Some(Resolver.file("file",  new File( "../../owlunit.github.com/repo/ivy/" )))
   )
 
+  val typesafe = "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
   /////////////////////
   // Dependencies
@@ -37,10 +41,14 @@ object IiCoreBuild extends Build {
 
   object Dependency {
 
-    val specs2      = "org.specs2"                %% "specs2"               % "1.9"    % "test"
-
     val neo4j       = "org.neo4j"                 %  "neo4j"                % "1.8"
     val neo4jREST   = "org.neo4j"                 %  "neo4j-rest-graphdb"   % "1.8"
+
+    val akka        = "com.typesafe.akka"         % "akka-actor"            % "2.0.4"
+
+    val slf4s       = "com.weiglewilczek.slf4s"   %% "slf4s"                % "1.0.7"
+    val specs2      = "org.specs2"                %% "specs2"               % "1.9"    % "test"
+    val logback     = "ch.qos.logback"            %  "logback-classic"      % "1.0.6"  % "test"
 
   }
 

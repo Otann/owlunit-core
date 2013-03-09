@@ -3,6 +3,8 @@ package com.owlunit.core.ii.mutable
 import org.specs2.mutable.Specification
 import com.owlunit.core.ii.NotFoundException
 import scala.sys.process._
+import java.util.UUID
+import com.weiglewilczek.slf4s.Logging
 
 /**
  * @author Anton Chebotaev
@@ -10,13 +12,16 @@ import scala.sys.process._
  */
 
 
-class IiSpecs extends Specification {
+class IiSpecs extends Specification with Logging {
 
   def getRandomIi: Ii = dao.load(dao.create.save.id)
   def createIi(name: String): Ii = dao.load(dao.create.setMeta("name", name).save.id)
 
+  def randomString = UUID.randomUUID().toString
+  def randomKeyValue: (String, String) = ("key-%s" format randomString, "value-%s" format randomString)
+
   var dao: IiDao = null
-  val dbPath = "target/neo4j_db"
+  val dbPath = "/tmp/neo4j_db"
 
   step {
     dao = IiDao.local(dbPath)
@@ -36,8 +41,10 @@ class IiSpecs extends Specification {
 
   "Loaded Ii" should {
     "load meta" in {
-      val saved = dao.create.setMeta("load-meta-test", "load-meta-test-value").save
-      dao.load(saved.id).meta must havePair("load-meta-test" -> "load-meta-test-value")
+      val (key, value) = randomKeyValue
+
+      val saved = dao.create.setMeta(key, value).save
+      dao.load(saved.id).meta must havePair(key -> value)
     }
     "load items" in {
       val item1 = dao.load(dao.create.save.id)
@@ -47,7 +54,7 @@ class IiSpecs extends Specification {
       val loaded = dao.load(saved.id).setItem(item2, 1.0).save
       dao.load(loaded.id).items must havePair(item2 -> 1.0)
     }
-    "persist used Ii into non-empty ii" in {
+    "keep having used Ii into non-empty ii" in {
       // create items
       val a = createIi("persist used Ii into non-empty ii a")
       val b = createIi("persist used Ii into non-empty ii b")
@@ -65,61 +72,89 @@ class IiSpecs extends Specification {
     }
   }
 
-  "Ii's meta index" should {
-    "be able to load with indexing" in {
-      val key = "key | not be able to load with indexing"
-      val value = "value | not be able to load with indexing"
+  "Ii's meta indexing" should {
+    "be able to load with fulltext indexing" in {
+      val (key, value) = randomKeyValue
 
-      val saved = dao.create.setMeta(key, value, isIndexedFulltext = true).save
+      val saved = dao.create.setMeta(key, value, isFulltext = true).save
       val loaded = dao.load(key, value)
       loaded must contain(saved)
     }
-    "be able to load without indexing" in {
-      val key = "key | be able to load without indexing"
-      val value = "value | be able to load without indexing"
+    "be able to load without fulltext indexing" in {
+      val (key, value) = randomKeyValue
 
       val saved = dao.create.setMeta(key, value).save
       val loaded = dao.load(key, value)
       loaded must contain(saved)
     }
-    "be able to search with indexing" in {
-      val key = "key | be able to search with indexing"
-      val value = "value | be able to search with indexing (alloda)"
+    "be able to search with fulltext indexing" in {
+      val (key, value) = randomKeyValue
 
-      val saved = dao.create.setMeta(key, value, isIndexedFulltext = true).save
+      val saved = dao.create.setMeta(key, value, isFulltext = true).save
       val loaded = dao.search(key, value)
       loaded must contain(saved)
     }
-    "not be able to search with indexing" in {
-      val key = "key | not be able to search with indexing"
-      val value = "value | not be able to search with indexing"
+    "not be able to search without fulltext indexing" in {
+      val (key, value) = randomKeyValue
 
       val saved = dao.create.setMeta(key, value).save
       val loaded = dao.search(key, value)
       loaded must not contain(saved)
     }
+
+    "remove fulltext index after new value set without it" in {
+      val (key, value) = randomKeyValue
+
+      var saved = dao.create.setMeta(key, value, isFulltext = true).save
+      saved = dao.load(saved.id)
+      saved.setMeta(key, randomString, isFulltext = false).save
+
+      val loaded = dao.search(key, value)
+      loaded must not contain(saved)
+    }
+    "remove general index after new value set with fulltext" in {
+      val (key, value) = randomKeyValue
+
+      var saved = dao.create.setMeta(key, value, isFulltext = false).save
+      saved = dao.load(saved.id)
+      saved.setMeta(key, randomString, isFulltext = true).save
+
+      val loaded = dao.load(key, value)
+      loaded must not contain(saved)
+    }
   }
 
   "Recommender" should {
-    "find indirect component" in {
+    "find indirect component, depth 1" in {
+      val leaf = dao.create.save
+      val root = dao.create.setItem(leaf, 1.0).save
+      dao.indirectComponents(root, 1).size mustEqual 1
+    }
+    "find indirect component, depth 2" in {
       val leaf = dao.create.save
       val middle = dao.create.setItem(leaf, 1.0).save
       val root = dao.create.setItem(middle, 1.0).save
-      dao.indirectComponents(root, 2) must not beEmpty
+      dao.indirectComponents(root, 2).size mustEqual 2
     }
     "give zero recommendations for empty ii" in {
       val ii = dao.create.save
-      dao.getSimilar(ii, "any") must beEmpty
+      dao.recommend(Map(ii -> 1), "any") must beEmpty
     }
-    "give at least 1 recommendations for good case (common leaf, right meta)" in {
+    "give at least 1 recommendations for common leaf, filled meta" in {
       val component = createIi("component").save
       val rootA = createIi("rootA").setMeta("test", "true").setItem(component, 1.0).save
       val rootB = createIi("rootB").setMeta("test", "true").setItem(component, 1.0).save
 
-      dao.getSimilar(rootA, "test") must haveKey(rootB)
+      dao.recommend(Map(rootA -> 1), "test") must haveKey(rootB)
+    }
+    "give at least 1 recommendations for common leaf, filled meta with indexing" in {
+      val component = createIi("component").save
+      val rootA = createIi("rootA").setMeta("test", "true", isFulltext = true).setItem(component, 1.0).save
+      val rootB = createIi("rootB").setMeta("test", "true", isFulltext = true).setItem(component, 1.0).save
+
+      dao.recommend(Map(rootA -> 1), "test") must haveKey(rootB)
     }
   }
-
 
   step {
     dao.shutdown()
