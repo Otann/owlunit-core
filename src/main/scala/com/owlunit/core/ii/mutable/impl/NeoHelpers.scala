@@ -13,20 +13,31 @@ import org.neo4j.helpers.collection.MapUtil
  *         Owls Proprietary
  */
 
+private[impl] object RelType extends RelationshipType {
+  def name() = "CONNECTED"
+}
 
+case class IiSnapshot(id: Long, items: Map[Long, Double])
 
-trait Helpers {
+private[impl] trait NeoHelpers {
+
+  private[impl] implicit def IiToSnapshot(original: NeoIi): IiSnapshot = {
+    val items = original.items.map({case (ii, weight) => (ii.id, weight)}).toMap
+    IiSnapshot(original.id, items)
+  }
 
   private[impl] val FulltextIndexName = "FULLTEXT_ITEMS_INDEX"
   private[impl] val FulltextIndexParams = MapUtil.stringMap(
     IndexManager.PROVIDER, "lucene",
     "type", "fulltext",
-    "to_lower_case", "true")
+    "to_lower_case", "true"
+  )
 
   private[impl] val ExactIndexName = "EXACT_ITEMS_INDEX"
   private[impl] val ExactIndexParams = MapUtil.stringMap(
     "type", "exact",
-    "to_lower_case", "true")
+    "to_lower_case", "true"
+  )
 
   private[impl] val WeightPropertyName = "WEIGHT"
 
@@ -35,6 +46,7 @@ trait Helpers {
     val nodes = collection.mutable.Map[Node, Double]()
 
     if (depth == 1) {
+
       val relsIterator = start.getRelationships(RelType, direction).iterator()
       while (relsIterator.hasNext) {
         val rel = relsIterator.next()
@@ -43,6 +55,7 @@ trait Helpers {
 
         nodes += (n -> w)
       }
+
     } else {
 
       val traverserIterator = Traversal.description()
@@ -80,9 +93,10 @@ trait Helpers {
     nodes.toMap
   }
 
-  private[impl] def getIndirectNodes(node: Node, depth: Int):Map[Node,  Double] = getNodes(node, Direction.OUTGOING, depth)
+  private[impl] def getIndirectNodes(node: Node, depth: Int): Map[Node,  Double] = getNodes(node, Direction.OUTGOING, depth)
 
   private[impl] def getRelation(a: Node, b: Node): Option[Relationship] = {
+
     val aIter = a.getRelationships(RelType).iterator()
     val bIter = b.getRelationships(RelType).iterator()
 
@@ -99,11 +113,12 @@ trait Helpers {
     None
   }
 
-  implicit def iiToIiImpl(item: Ii): NeoIi =
+  implicit def iiToIiImpl(item: Ii): NeoIi = {
     if (item.isInstanceOf[NeoIi])
       item.asInstanceOf[NeoIi]
     else
-      throw new IllegalArgumentException("This dao can not operate with item %s" format item.toString)
+      throw new IllegalArgumentException("Can't operate with this implementation %s" format item)
+  }
 
 }
 

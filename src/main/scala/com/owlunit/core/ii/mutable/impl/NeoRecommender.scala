@@ -3,16 +3,22 @@ package com.owlunit.core.ii.mutable.impl
 import collection.mutable.{Map => MutableMap}
 import com.owlunit.core.ii.mutable.{Recommender, Ii}
 import org.neo4j.graphdb.{GraphDatabaseService, Direction, Node}
-
+import org.slf4j.LoggerFactory
 
 /**
  * @author Anton Chebotaev
  *         Owls Proprietary
  */
 
-private [mutable] trait NeoRecommender extends Recommender with Helpers {
+private [mutable] trait NeoRecommender extends Recommender with NeoHelpers {
 
   def graph: GraphDatabaseService
+
+  def depth = 3
+
+  @transient protected val logger = LoggerFactory.getLogger(this.getClass)
+
+  def getSimilar(a: Ii, key: String, limit: Int = defaultLimit): List[(Ii, Double)] = List()
 
   def compare(a: Ii, b: Ii) = {
     for {
@@ -24,10 +30,12 @@ private [mutable] trait NeoRecommender extends Recommender with Helpers {
     )
   } getOrElse 0
 
-  def getSimilar(a: Ii, key: String) = getSimilar(a.items, key)
+//  def recommend(a: Ii, key: String, limit: Int) = this.recommend(a.items, key)
 
-  def getSimilar(pattern: Map[Ii, Double], key: String, limit: Int) = {
+  def recommend(pattern: Map[Ii, Double], key: String, limit: Int) = {
     val candidates = MutableMap[Node, Double]()
+
+    logger.debug("requested map size: %s" format pattern.size)
 
     // load parents for query
     for {
@@ -35,11 +43,14 @@ private [mutable] trait NeoRecommender extends Recommender with Helpers {
       aNode <- i.node
     } {
       val parents = getNodes(aNode, Direction.INCOMING, 1)
+
       for ((parent, weight) <- parents if parent.hasProperty(key)) candidates.get(parent) match {
         case Some(_) => candidates(parent) += w + weight
         case None    => candidates(parent)  = w + weight
       }
     }
+
+    logger.debug("found %s conditades" format (candidates.size))
 
     // compare each parent to query and sort with TreeMap
     // TODO warning for unsaved nodes
@@ -48,7 +59,10 @@ private [mutable] trait NeoRecommender extends Recommender with Helpers {
       case (parent, weight) => new NeoIi(parent, graph) -> compareMaps(internalPattern, getIndirectNodes(parent, depth))
     }.toList
 
-    result.sortWith((a, b) => a._2 > b._2).take(limit).toMap
+    logger.debug("comparation end")
+
+    result.sortWith((a, b) => a._2 > b._2).take(limit)
+
   }
 
   def compareMaps[Node](a: Map[Node, Double], b: Map[Node, Double]): Double = {

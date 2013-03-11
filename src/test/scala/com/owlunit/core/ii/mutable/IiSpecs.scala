@@ -20,7 +20,7 @@ class IiSpecs extends Specification with Logging {
   def randomString = UUID.randomUUID().toString
   def randomKeyValue: (String, String) = ("key-%s" format randomString, "value-%s" format randomString)
 
-  var dao: IiDao = null
+  var dao: RecoDao = null
   val dbPath = "/tmp/neo4j_db"
 
   step {
@@ -128,29 +128,34 @@ class IiSpecs extends Specification with Logging {
     "find indirect component, depth 1" in {
       val leaf = dao.create.save
       val root = dao.create.setItem(leaf, 1.0).save
-      dao.indirectComponents(root, 1).size mustEqual 1
+      dao.indirectComponents(root.id, 1).size mustEqual 1
     }
     "find indirect component, depth 2" in {
       val leaf = dao.create.save
       val middle = dao.create.setItem(leaf, 1.0).save
       val root = dao.create.setItem(middle, 1.0).save
-      dao.indirectComponents(root, 2).size mustEqual 2
+      dao.indirectComponents(root.id, 2).size mustEqual 2
     }
     "give zero recommendations for empty ii" in {
       val ii = dao.create.save
-      dao.recommend(Map(ii -> 1), "any") must beEmpty
+      val loaded = dao.load(ii.id)
+      dao.recommend(Map(loaded -> 1), "any") must beEmpty
     }
     "give at least 1 recommendations for common leaf, filled meta" in {
+      val (key, value) = randomKeyValue
+
       val component = createIi("component").save
-      val rootA = createIi("rootA").setMeta("test", "true").setItem(component, 1.0).save
-      val rootB = createIi("rootB").setMeta("test", "true").setItem(component, 1.0).save
+      val rootA = createIi("rootA").setMeta(key, value).setItem(component, 1.0).save
+      val rootB = createIi("rootB").setMeta(key, value).setItem(component, 1.0).save
 
       dao.recommend(Map(rootA -> 1), "test") must haveKey(rootB)
     }
     "give at least 1 recommendations for common leaf, filled meta with indexing" in {
+      val (key, value) = randomKeyValue
+
       val component = createIi("component").save
-      val rootA = createIi("rootA").setMeta("test", "true", isFulltext = true).setItem(component, 1.0).save
-      val rootB = createIi("rootB").setMeta("test", "true", isFulltext = true).setItem(component, 1.0).save
+      val rootA = createIi("rootA").setMeta(key, value, isFulltext = true).setItem(component, 1.0).save
+      val rootB = createIi("rootB").setMeta(key, value, isFulltext = true).setItem(component, 1.0).save
 
       dao.recommend(Map(rootA -> 1), "test") must haveKey(rootB)
     }
