@@ -9,15 +9,14 @@ import akka.actor.{ActorLogging, Actor}
  *         Merge incoming maps
  *         When countdown is reached, reports result to parent
  */
-class WeightMerger(totalWeight: Double, amount: Int) extends Actor with ActorLogging {
+class MapsMerger(totalWeight: Double, amount: Int) extends Actor with ActorLogging {
 
   val result = collection.mutable.Map[Long, Double]()
   var countdown = amount
 
   protected def receive = {
 
-    case msg @ WeightedMap(data, mapWeight) => {
-      log.debug("merger received data: %s" format msg)
+    case WeightedMap(data, mapWeight) => {
 
       for ((id, itemWeight) <- data) {
         if (!result.contains(id))
@@ -28,7 +27,7 @@ class WeightMerger(totalWeight: Double, amount: Int) extends Actor with ActorLog
       countdown -= 1
 
       if (countdown == 0) {
-        context.parent ! MergedMap(result.toMap)
+        context.parent ! Merged(result.toMap)
       }
 
     }

@@ -13,10 +13,8 @@ class Loader(dao: IiDao) extends Actor with ActorLogging {
 
   protected def receive = {
 
-    case msg @ LoadIndirect(id, weight, depth) => {
-      log.debug("%s asked to load %s" format (sender, msg))
+    case LoadIndirect(id, weight, depth) =>
       sender ! WeightedMap(dao.indirectComponents(id, depth), weight)
-    }
 
     case LoadParents(id, weight, key) =>
       sender ! WeightedMap(dao.within(id, key), weight)

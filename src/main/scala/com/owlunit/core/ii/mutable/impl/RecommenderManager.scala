@@ -20,6 +20,8 @@ import akka.util.{Duration, Timeout}
 class RecommenderManager(dao: IiDao, name: String) extends Recommender with Logging {
 
   implicit val system = ActorSystem(name)
+  val config = Settings(system)
+  implicit val timeout: Timeout = Timeout(config.timeout)
 
 
   def init(){}
@@ -28,8 +30,6 @@ class RecommenderManager(dao: IiDao, name: String) extends Recommender with Logg
     system.shutdown()
   }
 
-  implicit val timeout: Timeout = Timeout(waitTime)
-  val waitTime: Duration = 5.seconds
 
   def recommend(query: Map[Ii, Double], key: String, limit: Int): List[(Ii, Double)] = {
 
@@ -39,7 +39,7 @@ class RecommenderManager(dao: IiDao, name: String) extends Recommender with Logg
 
     val idQuery = query.map{case (ii, w) => (ii.id, w)}.toMap
     val future = actor ? FindSimilar(idQuery, key, limit)
-    val idList = Await.result(future, waitTime).asInstanceOf[Similar]
+    val idList = Await.result(future, config.timeout).asInstanceOf[Similar]
 
     system.stop(actor)
 
@@ -49,20 +49,19 @@ class RecommenderManager(dao: IiDao, name: String) extends Recommender with Logg
 
   def compare(a: Ii, b: Ii): Double = {
 
-    val loadersAmount = 2
-    val depth = 3
+    val depth = config.indirectDepth
     val loader = system.actorOf(Props(new Loader(dao)))
     val comparator = system.actorOf(Props[Comparator])
 
     val future = for {
       aIndirect <- (loader ? LoadIndirect(a.id, 1, depth)).mapTo[WeightedMap]
       bIndirect <- (loader ? LoadIndirect(a.id, 1, depth)).mapTo[WeightedMap]
-      result <- (comparator ? Maps(aIndirect.map, bIndirect.map)).mapTo[MapsLikeness]
+      result <- (comparator ? Maps(aIndirect.map, bIndirect.map)).mapTo[Likeness]
     } yield {
       result
     }
 
-    val value = Await.result(future, waitTime)
+    val value = Await.result(future, config.timeout)
 
     system.stop(loader)
     system.stop(comparator)

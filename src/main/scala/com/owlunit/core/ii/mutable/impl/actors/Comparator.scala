@@ -11,12 +11,8 @@ import akka.event.Logging
  */
 class Comparator extends Actor {
 
-  val log = Logging(context.system, this)
-
   protected def receive = {
-
-    case Maps(a, b) => sender ! MapsLikeness(compareMaps(a, b))
-
+    case Maps(a, b) => sender ! Likeness(compareMaps(a, b))
   }
 
   def compareMaps(a: Map[Long, Double], b: Map[Long, Double]): Double = {
