@@ -13,6 +13,8 @@
     <logger name="neo4j.neostore" level="OFF"/>
     <logger name="neo4j.xafactory" level="OFF"/>
 
+    <logger name="akka" level="OFF"/>
+
     <root level="debug">
         <appender-ref ref="STDOUT" />
     </root>

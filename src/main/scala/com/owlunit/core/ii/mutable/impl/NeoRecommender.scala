@@ -35,8 +35,6 @@ private [mutable] trait NeoRecommender extends Recommender with NeoHelpers {
   def recommend(pattern: Map[Ii, Double], key: String, limit: Int) = {
     val candidates = MutableMap[Node, Double]()
 
-    logger.debug("requested map size: %s" format pattern.size)
-
     // load parents for query
     for {
       (i, w) <- pattern
@@ -50,16 +48,12 @@ private [mutable] trait NeoRecommender extends Recommender with NeoHelpers {
       }
     }
 
-    logger.debug("found %s conditades" format (candidates.size))
-
     // compare each parent to query and sort with TreeMap
     // TODO warning for unsaved nodes
     val internalPattern = pattern.map{ case (ii, w) if (ii.node.isDefined) => ii.node.get -> w }
     val result = candidates.map {
       case (parent, weight) => new NeoIi(parent, graph) -> compareMaps(internalPattern, getIndirectNodes(parent, depth))
     }.toList
-
-    logger.debug("comparation end")
 
     result.sortWith((a, b) => a._2 > b._2).take(limit)
 

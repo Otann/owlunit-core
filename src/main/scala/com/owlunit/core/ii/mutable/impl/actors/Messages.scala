@@ -8,20 +8,30 @@ import akka.actor.ActorRef
  *         Copyright OwlUnit
  */
 
-case class Message(initiator: ActorRef, message: Any)
-
-// For comparing maps
-case class Maps(a: WeightMap, b: WeightMap)
-
 // For recommender interface
 case class FindSimilar(query: Map[Long, Double], key: String, limit: Int)
+case class Similar(value: List[(Long, Double)])
 
-case class LoadParents(id: Long, key: String)
-case class Parents(map: Map[Long, Double])
+// For comparing maps
+case class Maps(a: Map[Long, Double], b: Map[Long, Double])
+case class MapsLikeness(value: Double = 0.0)
 
-case class LoadIndirect(id: Long, depth: Int)
+// For loader
+case class LoadIndirect(id: Long, weight: Double, depth: Int)
+case class LoadParents(id: Long, weight: Double, key: String)
+case class WeightedMap(map: Map[Long, Double], weight: Double)
 
-sealed trait MergeLoad
-case class MergeLoadParents(map: WeightMap) extends MergeLoad
-case class MergeLoadIndirect(map: WeightMap, depth: Int) extends MergeLoad
+// For loading parents of group of items
+case class MergeIndirect(map: Map[Long, Double])
+case class MergedMap(map: Map[Long, Double])
+
+////////////////////////////////////////////////////////////////////
+
+
+case class MergeParents(map: Map[Long, Double])
+
+// Results of operations
+case class Indirect(map: Map[Long, Double])
+case class Parents(map: Map[Long, Double], weight: Double)
+
 

@@ -9,8 +9,7 @@ trait Recommender {
 
   def defaultLimit = 100
 
-  //TODO: what is double?
-  def compare(a: Ii, b: Ii): Double
+  def compare(a: Ii, b: Ii): Double //TODO: what is double?
 
   def getSimilar(a: Ii, key: String, limit: Int = defaultLimit): List[(Ii, Double)]
   def recommend(p: Map[Ii, Double], key: String, limit: Int = defaultLimit): List[(Ii, Double)]

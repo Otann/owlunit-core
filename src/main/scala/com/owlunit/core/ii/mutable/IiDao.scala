@@ -23,7 +23,7 @@ trait IiDao {
   def search(key: String, queue: String): Seq[Ii]
 
   private[ii] def indirectComponents(item: Long, depth: Int): Map[Long, Double]
-  private[ii] def within(item: Long, key: String): Map[Long, Double]
+  private[ii] def within(item: Long, key: String): Map[Long, Double] // TODO: write tests for key
 
 }
 
@@ -43,8 +43,8 @@ private class ActorDaoImpl(graph: GraphDatabaseService, name: String)
 object IiDao {
 
   def apply(graph: GraphDatabaseService, name: String): RecoDao = {
-//    val result: RecoDao = new NeoDaoImpl(graph)
-    val result: RecoDao = new ActorDaoImpl(graph, name)
+    val result: RecoDao = new NeoDaoImpl(graph)
+//    val result: RecoDao = new ActorDaoImpl(graph, name)
     result
   }
 

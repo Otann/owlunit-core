@@ -7,22 +7,19 @@ import akka.event.Logging
  * @author Anton Chebotaev
  *         Copyright OwlUnit
  *
- *         Compares maps, returns double
+ *         Compares maps, returns double to sender
  */
-class Comparator extends Actor with Helper {
+class Comparator extends Actor {
 
   val log = Logging(context.system, this)
 
   protected def receive = {
-    case Maps(a, b) => sender ! compareMaps(a, b)
-//    case Message(origin, Maps(a, b)) => sender ! Message(origin, compareMaps(a, b))
 
-    MessageExpander {
-      case Maps(a, b) => sender ! compareMaps(a, b)
-    }
+    case Maps(a, b) => sender ! MapsLikeness(compareMaps(a, b))
+
   }
 
-  def compareMaps(a: WeightMap, b: WeightMap): Double = {
+  def compareMaps(a: Map[Long, Double], b: Map[Long, Double]): Double = {
 
     val union = Set[Long]() ++ a.keys ++ b.keys
 
