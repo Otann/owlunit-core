@@ -64,26 +64,42 @@ class ActorsSpecs
   }
 
   "WeightMerger" should {
-    "merge" in new AkkaSpec {
+    "merge custom maps" in new AkkaSpec {
       val actor = TestForwardParentRef(Props(new WeightMerger(2, 2)))
       actor ! WeightedMap(Map(1L -> 2), 1)
       actor ! WeightedMap(Map(1L -> 1), 2)
 
-      expectMsg(MergedMap(Map(1L -> 2.0))) //TODO: check
+      expectMsg(MergedMap(Map(1L -> 2.0))) //TODO: check arithmetic
     }
   }
 
-  "IndirectMerger" should {
+  "IndirectMergeLoader" should {
     "merge indirect" in new AkkaSpec {
-      val actor = TestForwardParentRef(Props(new IndirectMerger(dao, 2)))
+      val actor = TestForwardParentRef(Props(new IndirectMergeLoader(dao, 2)))
 
       val child = getRandomIi
       val parent1 = getRandomIi.setItem(child, 3).save
       val parent2 = getRandomIi.setItem(child, 1).save
 
-      actor ! MergeIndirect(Map(parent1.id -> 1, parent2.id -> 3))
+      actor ! LoadMerged(Map(parent1.id -> 1, parent2.id -> 3))
 
-      expectMsg(MergedMap(Map(child.id -> 1.5))) //TODO: check
+      expectMsg(MergedMap(Map(child.id -> 1.5))) //TODO: check arithmetic
+    }
+  }
+
+  "IndirectParentsLoader" should {
+    "merge parents" in new AkkaSpec {
+      val (key, value) = randomKeyValue
+      val actor = TestForwardParentRef(Props(new ParentsMergeLoader(dao, key)))
+
+      val child1 = getRandomIi
+      val child2 = getRandomIi
+      val parent = getRandomIi.setMeta(key, value)
+        .setItem(child1, 3).setItem(child2, 3).save
+
+      actor ! LoadMerged(Map(child1.id -> 1, child2.id -> 3))
+
+      expectMsg(MergedMap(Map(parent.id -> 3.0))) //TODO: check arithmetic
     }
   }
 

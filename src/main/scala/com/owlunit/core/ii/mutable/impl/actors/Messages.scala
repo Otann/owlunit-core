@@ -22,7 +22,7 @@ case class LoadParents(id: Long, weight: Double, key: String)
 case class WeightedMap(map: Map[Long, Double], weight: Double)
 
 // For loading parents of group of items
-case class MergeIndirect(map: Map[Long, Double])
+case class LoadMerged(map: Map[Long, Double])
 case class MergedMap(map: Map[Long, Double])
 
 ////////////////////////////////////////////////////////////////////

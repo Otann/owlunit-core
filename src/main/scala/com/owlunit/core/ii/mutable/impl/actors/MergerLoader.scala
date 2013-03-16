@@ -13,7 +13,7 @@ import collection.mutable.{Map => MutableMap}
  *         MapReduce like loader and merger of Ii's indirect components and parents
  *         Returns results to parent
  */
-class IndirectMerger(dao: IiDao, depth: Int) extends Actor with ActorLogging {
+class MergerLoader(dao: IiDao, load: (Long, Double) => Any) extends Actor with ActorLogging {
 
   val loadersAmount = 10 //TODO: replace loadersAmount with file config
 
@@ -27,7 +27,7 @@ class IndirectMerger(dao: IiDao, depth: Int) extends Actor with ActorLogging {
   protected def receive = {
 
     // Map
-    case MergeIndirect(query) => {
+    case LoadMerged(query) => {
       log.debug("%s received task" format self)
       totalWeight = query.foldLeft(0.0)(_ + _._2)
       countdown = query.size
@@ -37,7 +37,7 @@ class IndirectMerger(dao: IiDao, depth: Int) extends Actor with ActorLogging {
 
       // feed workers with work, replace sender with merger
       for ((id, weight) <- query) {
-        val task = LoadIndirect(id, weight, depth)
+        val task = load(id, weight)
         workers.tell(task, merger)
         log.debug("sent %s to %s" format (task, workers))
       }
@@ -54,3 +54,9 @@ class IndirectMerger(dao: IiDao, depth: Int) extends Actor with ActorLogging {
   }
 
 }
+
+class IndirectMergeLoader(dao: IiDao, depth: Int)
+  extends MergerLoader(dao, (id: Long, w: Double) => LoadIndirect(id, w, depth))
+
+class ParentsMergeLoader(dao: IiDao, key: String)
+  extends MergerLoader(dao, (id: Long, w: Double) => LoadParents(id, w, key))

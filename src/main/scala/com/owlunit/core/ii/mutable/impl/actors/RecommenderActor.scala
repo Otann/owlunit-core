@@ -18,7 +18,8 @@ class RecommenderActor(dao: IiDao) extends Actor {
   val depth = 3
   val loadersAmount = 10
 
-  val indirectLoader = context.actorOf(Props(new IndirectMerger(dao, depth)))
+  def indirectMessage(id: Long, w: Double) = LoadIndirect(id, w, 2)
+  val indirectLoader = context.actorOf(Props(new MergerLoader(dao, indirectMessage)))
 
   implicit val timeout = Timeout(5.seconds)
 
@@ -28,7 +29,7 @@ class RecommenderActor(dao: IiDao) extends Actor {
     case FindSimilar(query, key, limit) => {
 
       // initiate load and start waiting reply
-      val indirectFuture = indirectLoader ? MergeIndirect(query)
+      val indirectFuture = indirectLoader ? LoadMerged(query)
 
       sender ! Similar(List())
     }

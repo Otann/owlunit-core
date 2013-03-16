@@ -22,8 +22,8 @@ object IiCoreBuild extends Build {
         Dependency.akkaTest,
         Dependency.slf4s,
         Dependency.logback,
-        Dependency.specs2,
-        Dependency.scalatest
+        Dependency.specs2
+//        Dependency.scalatest
         )
       )
     )
