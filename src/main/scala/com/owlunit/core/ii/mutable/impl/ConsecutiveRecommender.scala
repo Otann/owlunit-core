@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
  *         Owls Proprietary
  */
 
-private [mutable] trait NeoRecommender extends Recommender with NeoHelpers {
+private [mutable] trait ConsecutiveRecommender extends Recommender with NeoHelpers {
 
   def graph: GraphDatabaseService
 

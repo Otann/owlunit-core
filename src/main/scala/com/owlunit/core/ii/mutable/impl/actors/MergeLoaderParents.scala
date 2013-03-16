@@ -9,32 +9,33 @@ import akka.routing.RoundRobinRouter
  * @author Anton Chebotaev
  *         Copyright OwlUnit
  *
- *         MapReduce like loader and merger of Ii's parents
- *         Returns results to parent
+ *         Operated by LoadMergedParents message
+ *         Initiates merger actor, which combines results from workers
+ *         and reports back
+ *         Returns results to parent as MergedParents
  */
-class MergeLoaderParents(dao: IiDao) extends MergeLoader(dao) {
+class MergeLoaderParents(dao: IiDao) extends Actor with ActorLogging {
 
-  def loadersAmount: Int = settings.loadersParentsAmount
+  val settings = Settings(context.system)
+
+  val workers = context.actorOf(Props(new Loader(dao))
+    .withRouter(RoundRobinRouter(nrOfInstances = settings.loadersParentsAmount)))
 
   protected def receive = {
 
-    // Map
     case LoadMergedParents(query, key) => {
-      totalWeight = query.foldLeft(0.0)(_ + _._2)
-      countdown = query.size
+
+      val totalWeight = query.foldLeft(0.0)(_ + _._2)
+      val countdown = query.size
 
       // create merger
-      merger = context.actorOf(Props(new MapsMerger(totalWeight, countdown)))
+      val merger = context.actorOf(Props(new MapsMerger(totalWeight, countdown)))
 
       // feed workers with work, replace sender with merger
       for ((id, weight) <- query) workers.tell(LoadParents(id, weight, key), merger)
     }
 
-    // Reduce
-    case msg: Merged => {
-      log.debug("MergeLoader %s received and forwarded to %s" format (self, context.parent))
-      context.parent ! msg
-    }
+    case Merged(map) => context.parent ! MergedParents(map)
 
   }
 }

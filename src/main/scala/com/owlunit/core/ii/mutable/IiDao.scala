@@ -1,6 +1,6 @@
 package com.owlunit.core.ii.mutable
 
-import impl.{RecommenderManager, NeoIiDao, NeoRecommender}
+import impl.{AkkaRecommender, NeoIiDao, ConsecutiveRecommender}
 import org.neo4j.graphdb.GraphDatabaseService
 import org.neo4j.kernel.EmbeddedGraphDatabase
 import org.neo4j.rest.graphdb.RestGraphDatabase
@@ -30,11 +30,11 @@ trait IiDao {
 trait RecoDao extends IiDao with Recommender
 
 private class NeoDaoImpl(graph: GraphDatabaseService)
-  extends NeoIiDao(graph) with RecoDao with NeoRecommender
+  extends NeoIiDao(graph) with RecoDao with ConsecutiveRecommender
 
 private class ActorDaoImpl(graph: GraphDatabaseService, name: String)
   extends NeoIiDao(graph) with RecoDao with Recommender {
-  val recommender = new RecommenderManager(this, name)
+  val recommender = new AkkaRecommender(this, name)
   def compare(a: Ii, b: Ii) = recommender.compare(a, b)
   def getSimilar(a: Ii, key: String, limit: Int) = recommender.getSimilar(a, key, limit)
   def recommend(p: Map[Ii, Double], key: String, limit: Int) = recommender.recommend(p, key, limit)
@@ -43,8 +43,8 @@ private class ActorDaoImpl(graph: GraphDatabaseService, name: String)
 object IiDao {
 
   def apply(graph: GraphDatabaseService, name: String): RecoDao = {
-    val result: RecoDao = new NeoDaoImpl(graph)
-//    val result: RecoDao = new ActorDaoImpl(graph, name)
+//    val result: RecoDao = new NeoDaoImpl(graph)
+    val result: RecoDao = new ActorDaoImpl(graph, name)
     result
   }
 
