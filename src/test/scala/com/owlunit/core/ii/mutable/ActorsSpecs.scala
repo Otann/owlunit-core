@@ -16,9 +16,9 @@ import akka.actor.{ActorSystem, Props}
 import org.specs2.specification.Scope
 
 /**
- * @author Anton Chebotaev
- *         Owls Proprietary
- */
+* @author Anton Chebotaev
+*         Owls Proprietary
+*/
 
 
 class ActorsSpecs
@@ -27,11 +27,11 @@ class ActorsSpecs
 
   sequential // forces all tests to be run sequentially
 
-  var dao: RecoDao = null
   val dbPath = "/tmp/neo4j_db"
+  var dao: IiService = null
 
   step {
-    dao = IiDao.local(dbPath)
+    dao = IiService.local(dbPath)
   }
 
   "Comparator" should {
@@ -120,7 +120,7 @@ class ActorsSpecs
 
   step {
     dao.shutdown()
-    Seq("rm", "-r", dbPath).!!
+    Seq("rm", "-rf", dbPath).!!
   }
 
 }

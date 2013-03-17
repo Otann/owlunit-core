@@ -1,29 +1,19 @@
-package com.owlunit.core.ii.mutable.impl
+package com.owlunit.core.ii.mutable
 
-import collection.mutable.{Map => MutableMap}
-import org.neo4j.graphdb._
-import index.IndexManager
-import org.neo4j.kernel.{Uniqueness, Traversal}
-import traversal.Evaluators
-import com.owlunit.core.ii.mutable.Ii
 import org.neo4j.helpers.collection.MapUtil
+import org.neo4j.graphdb.index.IndexManager
+import org.neo4j.graphdb.{RelationshipType, Relationship, Direction, Node}
+import org.neo4j.kernel.{Uniqueness, Traversal}
+import org.neo4j.graphdb.traversal.Evaluators
 
 /**
  * @author Anton Chebotaev
  *         Owls Proprietary
  */
+package object impl {
 
-private[impl] object RelType extends RelationshipType {
-  def name() = "CONNECTED"
-}
-
-case class IiSnapshot(id: Long, items: Map[Long, Double])
-
-private[impl] trait NeoHelpers {
-
-  private[impl] implicit def IiToSnapshot(original: NeoIi): IiSnapshot = {
-    val items = original.items.map({case (ii, weight) => (ii.id, weight)}).toMap
-    IiSnapshot(original.id, items)
+  private[impl] object RelType extends RelationshipType {
+    def name() = "CONNECTED"
   }
 
   private[impl] val FulltextIndexName = "FULLTEXT_ITEMS_INDEX"
@@ -121,4 +111,3 @@ private[impl] trait NeoHelpers {
   }
 
 }
-

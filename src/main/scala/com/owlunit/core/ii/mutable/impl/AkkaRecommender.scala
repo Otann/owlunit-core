@@ -8,12 +8,11 @@ import actors.LoadIndirect
 import actors.MapsWithId
 import actors.Similar
 import akka.actor.{Props, ActorSystem}
-import com.owlunit.core.ii.mutable.{IiDao, Recommender, Ii}
+import com.owlunit.core.ii.mutable.{IiDao, IiRecommender, Ii}
 import com.weiglewilczek.slf4s.Logging
-import akka.util.duration._
-import akka.dispatch.{Promise, ExecutionContext, Future, Await}
+import akka.dispatch.Await
 import akka.pattern.ask
-import akka.util.{Duration, Timeout}
+import akka.util.Timeout
 import java.util.concurrent.TimeoutException
 
 
@@ -21,36 +20,33 @@ import java.util.concurrent.TimeoutException
  * @author Anton Chebotaev
  *         Copyright OwlUnit
  */
+//TODO: consider separate class parametrized by dao
+trait AkkaRecommender extends IiDao with IiRecommender with Logging {
 
+  def name: String
 
-class AkkaRecommender(dao: IiDao, name: String) extends Recommender with Logging {
-
-  implicit val system = ActorSystem(name)
+  implicit val system = ActorSystem()
   val config = Settings(system)
   implicit val timeout: Timeout = Timeout(config.timeout)
 
-  def init(){}
-
-  def shutdown() {
+  override def shutdown() {
+    super.shutdown()
     system.shutdown()
   }
-
 
   def getSimilar(a: Ii, key: String, limit: Int): List[(Ii, Double)] = recommend(a.items, key, limit)
 
   def recommend(query: Map[Ii, Double], key: String, limit: Int): List[(Ii, Double)] = {
 
-    logger.debug("recommending for query %s" format query)
-
-    val actor = system.actorOf(Props(new SimilarFinder(dao)))
+    val actor = system.actorOf(Props(new SimilarFinder(this)))
 
     val idQuery = query.map{case (ii, w) => (ii.id, w)}.toMap
     val future = actor ? FindSimilar(idQuery, key, limit)
 
     try {
 
-      val idList = Await.result(future, config.timeout).asInstanceOf[Similar]
-      idList.value.map{ case (id, w) => (dao.load(id), w)}
+      val idList = Await.result(future.mapTo[Similar], config.timeout)
+      idList.value.map{ case (id, w) => (this.load(id), w)}
 
     } catch {
 
@@ -68,7 +64,7 @@ class AkkaRecommender(dao: IiDao, name: String) extends Recommender with Logging
   def compare(a: Ii, b: Ii): Double = {
 
     val depth = config.indirectDepth
-    val loader = system.actorOf(Props(new Loader(dao)))
+    val loader = system.actorOf(Props(new Loader(this)))
     val comparator = system.actorOf(Props[Comparator])
 
     val future = for {

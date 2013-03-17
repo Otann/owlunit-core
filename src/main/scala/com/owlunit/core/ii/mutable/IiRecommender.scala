@@ -5,7 +5,7 @@ package com.owlunit.core.ii.mutable
   *         Owls Proprietary
   */
 
-trait Recommender {
+trait IiRecommender {
 
   def defaultLimit = 100
 

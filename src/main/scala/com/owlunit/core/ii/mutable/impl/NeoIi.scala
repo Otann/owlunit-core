@@ -9,9 +9,7 @@ import com.weiglewilczek.slf4s.Logging
  *         Owls Proprietary
  */
 
-private[impl] class NeoIi( var node: Option[Node],
-                           val graph: GraphDatabaseService)
-  extends Ii with NeoHelpers with Logging {
+private[impl] class NeoIi( var node: Option[Node], val graph: GraphDatabaseService) extends Ii with Logging {
 
   def this(graph: GraphDatabaseService) = this(None, graph)
   def this(node: Node, graph: GraphDatabaseService) = this(Some(node), graph)

@@ -8,19 +8,19 @@ import com.weiglewilczek.slf4s.Logging
 import utils.IiHelpers
 
 /**
- * @author Anton Chebotaev
- *         Owls Proprietary
- */
+* @author Anton Chebotaev
+*         Owls Proprietary
+*/
 
 
 class IiSpecs extends Specification with Logging with IiHelpers {
   sequential // forces all tests to be run sequentially
 
   val dbPath = "/tmp/neo4j_db"
-  var dao: RecoDao = null
+  var dao: IiService = null
 
   step {
-    dao = IiDao.local(dbPath)
+    dao = IiService.local(dbPath)
   }
 
   "New Ii" should {
@@ -137,29 +137,29 @@ class IiSpecs extends Specification with Logging with IiHelpers {
       val loaded = dao.load(ii.id)
       dao.recommend(Map(loaded -> 1), "any") must beEmpty
     }
-//    "give at least 1 recommendations for common leaf, filled meta" in {
-//      val (key, value) = randomKeyValue
-//
-//      val component = createIi("component").save
-//      val rootA = createIi("rootA").setMeta(key, value).setItem(component, 1.0).save
-//      val rootB = createIi("rootB").setMeta(key, value).setItem(component, 1.0).save
-//
-//      dao.recommend(Map(rootA -> 1), "test") must haveKey(rootB)
-//    }
-//    "give at least 1 recommendations for common leaf, filled meta with indexing" in {
-//      val (key, value) = randomKeyValue
-//
-//      val component = createIi("component").save
-//      val rootA = createIi("rootA").setMeta(key, value, isFulltext = true).setItem(component, 1.0).save
-//      val rootB = createIi("rootB").setMeta(key, value, isFulltext = true).setItem(component, 1.0).save
-//
-//      dao.recommend(Map(rootA -> 1), "test") must haveKey(rootB)
-//    }
+    "give at least 1 recommendations for common leaf, filled meta" in {
+      val (key, value) = randomKeyValue
+
+      val component = createIi("component").save
+      val rootA = createIi("rootA").setMeta(key, value).setItem(component, 1.0).save
+      val rootB = createIi("rootB").setMeta(key, value).setItem(component, 1.0).save
+
+      dao.recommend(Map(rootA -> 1), key) must haveKey(rootB)
+    }
+    "give at least 1 recommendations for common leaf, filled meta with indexing" in {
+      val (key, value) = randomKeyValue
+
+      val component = createIi("component").save
+      val rootA = createIi("rootA").setMeta(key, value, isFulltext = true).setItem(component, 1.0).save
+      val rootB = createIi("rootB").setMeta(key, value, isFulltext = true).setItem(component, 1.0).save
+
+      dao.recommend(Map(rootA -> 1), key) must haveKey(rootB)
+    }
   }
 
   step {
     dao.shutdown()
-    Seq("rm", "-r", dbPath).!!
+    Seq("rm", "-rf", dbPath).!!
   }
 
 }

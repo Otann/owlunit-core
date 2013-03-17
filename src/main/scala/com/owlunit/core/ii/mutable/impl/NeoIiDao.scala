@@ -11,17 +11,18 @@ import org.neo4j.graphdb.{Direction, GraphDatabaseService}
  *         Owls Proprietary
  */
 
-private[mutable] class NeoIiDao(val graph: GraphDatabaseService)
-  extends IiDao with NeoHelpers {
+private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao {
 
   private def fulltextIndex = graph.index().forNodes(FulltextIndexName, FulltextIndexParams)
   private def exactIndex = graph.index().forNodes(ExactIndexName, ExactIndexParams)
 
-  def init() {
+  override def init() {
     ShutdownHookThread { shutdown() }
+    super.init()
   }
-  def shutdown() {
+  override def shutdown() {
     graph.shutdown()
+    super.shutdown()
   }
 
   // Implementations
