@@ -1,5 +1,6 @@
 package com.owlunit.core.ii.mutable
 
+import impl.{AkkaRecommender, NeoIiDao}
 import org.neo4j.graphdb.GraphDatabaseService
 import org.neo4j.kernel.EmbeddedGraphDatabase
 import org.neo4j.rest.graphdb.RestGraphDatabase
@@ -10,10 +11,10 @@ import org.neo4j.rest.graphdb.RestGraphDatabase
  */
 
 
-trait IiDao extends Recommender {
+trait IiDao {
 
-  def init()
-  def shutdown()
+  def init(){}
+  def shutdown(){}
 
   def create: Ii
 
@@ -21,21 +22,7 @@ trait IiDao extends Recommender {
   def load(key: String, value: String): Seq[Ii]
   def search(key: String, queue: String): Seq[Ii]
 
-  def indirectComponents(item: Ii, depth: Int): Map[Ii, Double]
-  def within(item: Ii): Map[Ii, Double]
-
-}
-
-object IiDao {
-
-  def apply(graph: GraphDatabaseService): IiDao = new impl.NeoIiDao(graph)
-
-  def local(path: String): IiDao = apply(
-    new EmbeddedGraphDatabase(path)
-  )
-
-  def remote(url: String, login: String, password: String): IiDao = apply(
-    new RestGraphDatabase(url, login, password)
-  )
+  private[ii] def indirectComponents(item: Long, depth: Int): Map[Long, Double]
+  private[ii] def within(item: Long, key: String): Map[Long, Double] // TODO: write tests for key
 
 }

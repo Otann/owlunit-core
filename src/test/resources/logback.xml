@@ -7,11 +7,13 @@
         </encoder>
     </appender>
 
-    <logger name="com.ning.http.client" level="WARN"/>
+    <logger name="com.ning.http.client" level="OFF"/>
 
     <logger name="neo4j" level="INFO"/>
     <logger name="neo4j.neostore" level="OFF"/>
     <logger name="neo4j.xafactory" level="OFF"/>
+
+    <logger name="akka" level="OFF"/>
 
     <root level="debug">
         <appender-ref ref="STDOUT" />

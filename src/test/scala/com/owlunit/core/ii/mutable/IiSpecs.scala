@@ -1,30 +1,26 @@
 package com.owlunit.core.ii.mutable
 
-import org.specs2.mutable.Specification
+import org.specs2.mutable.{Before, After, Specification}
 import com.owlunit.core.ii.NotFoundException
 import scala.sys.process._
 import java.util.UUID
 import com.weiglewilczek.slf4s.Logging
+import utils.IiHelpers
 
 /**
- * @author Anton Chebotaev
- *         Owls Proprietary
- */
+* @author Anton Chebotaev
+*         Owls Proprietary
+*/
 
 
-class IiSpecs extends Specification with Logging {
+class IiSpecs extends Specification with Logging with IiHelpers {
+  sequential // forces all tests to be run sequentially
 
-  def getRandomIi: Ii = dao.load(dao.create.save.id)
-  def createIi(name: String): Ii = dao.load(dao.create.setMeta("name", name).save.id)
-
-  def randomString = UUID.randomUUID().toString
-  def randomKeyValue: (String, String) = ("key-%s" format randomString, "value-%s" format randomString)
-
-  var dao: IiDao = null
   val dbPath = "/tmp/neo4j_db"
+  var dao: IiService = null
 
   step {
-    dao = IiDao.local(dbPath)
+    dao = IiService.local(dbPath)
   }
 
   "New Ii" should {
@@ -128,37 +124,42 @@ class IiSpecs extends Specification with Logging {
     "find indirect component, depth 1" in {
       val leaf = dao.create.save
       val root = dao.create.setItem(leaf, 1.0).save
-      dao.indirectComponents(root, 1).size mustEqual 1
+      dao.indirectComponents(root.id, 1).size mustEqual 1
     }
     "find indirect component, depth 2" in {
       val leaf = dao.create.save
       val middle = dao.create.setItem(leaf, 1.0).save
       val root = dao.create.setItem(middle, 1.0).save
-      dao.indirectComponents(root, 2).size mustEqual 2
+      dao.indirectComponents(root.id, 2).size mustEqual 2
     }
     "give zero recommendations for empty ii" in {
       val ii = dao.create.save
-      dao.recommend(Map(ii -> 1), "any") must beEmpty
+      val loaded = dao.load(ii.id)
+      dao.recommend(Map(loaded -> 1), "any") must beEmpty
     }
     "give at least 1 recommendations for common leaf, filled meta" in {
-      val component = createIi("component").save
-      val rootA = createIi("rootA").setMeta("test", "true").setItem(component, 1.0).save
-      val rootB = createIi("rootB").setMeta("test", "true").setItem(component, 1.0).save
+      val (key, value) = randomKeyValue
 
-      dao.recommend(Map(rootA -> 1), "test") must haveKey(rootB)
+      val component = createIi("component").save
+      val rootA = createIi("rootA").setMeta(key, value).setItem(component, 1.0).save
+      val rootB = createIi("rootB").setMeta(key, value).setItem(component, 1.0).save
+
+      dao.recommend(Map(rootA -> 1), key) must haveKey(rootB)
     }
     "give at least 1 recommendations for common leaf, filled meta with indexing" in {
-      val component = createIi("component").save
-      val rootA = createIi("rootA").setMeta("test", "true", isFulltext = true).setItem(component, 1.0).save
-      val rootB = createIi("rootB").setMeta("test", "true", isFulltext = true).setItem(component, 1.0).save
+      val (key, value) = randomKeyValue
 
-      dao.recommend(Map(rootA -> 1), "test") must haveKey(rootB)
+      val component = createIi("component").save
+      val rootA = createIi("rootA").setMeta(key, value, isFulltext = true).setItem(component, 1.0).save
+      val rootB = createIi("rootB").setMeta(key, value, isFulltext = true).setItem(component, 1.0).save
+
+      dao.recommend(Map(rootA -> 1), key) must haveKey(rootB)
     }
   }
 
   step {
     dao.shutdown()
-    Seq("rm", "-r", dbPath).!!
+    Seq("rm", "-rf", dbPath).!!
   }
 
 }

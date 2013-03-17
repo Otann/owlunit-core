@@ -1,6 +1,6 @@
 package com.owlunit.core.ii.mutable.impl
 
-import com.owlunit.core.ii.mutable.{Ii, IiDao}
+import com.owlunit.core.ii.mutable.{IiDao, Ii}
 import com.owlunit.core.ii.NotFoundException
 import collection.mutable.ListBuffer
 import sys.ShutdownHookThread
@@ -11,13 +11,21 @@ import org.neo4j.graphdb.{Direction, GraphDatabaseService}
  *         Owls Proprietary
  */
 
-private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao with Helpers with NeoRecommender {
+private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao {
 
   private def fulltextIndex = graph.index().forNodes(FulltextIndexName, FulltextIndexParams)
   private def exactIndex = graph.index().forNodes(ExactIndexName, ExactIndexParams)
 
-  def init() { ShutdownHookThread { shutdown() } }
-  def shutdown() { graph.shutdown() }
+  override def init() {
+    ShutdownHookThread { shutdown() }
+    super.init()
+  }
+  override def shutdown() {
+    graph.shutdown()
+    super.shutdown()
+  }
+
+  // Implementations
 
   def create = new NeoIi(graph)
 
@@ -56,14 +64,11 @@ private[mutable] class NeoIiDao(val graph: GraphDatabaseService) extends IiDao w
     result.toList
   }
 
-  def indirectComponents(item: Ii, depth: Int) = item.node match {
-    case None => Map()
-    case Some(aNode) => getIndirectNodes(aNode, depth).map{case (n, w) => new NeoIi(n, graph) -> w}
-  }
+  def indirectComponents(item: Long, depth: Int) =
+    getIndirectNodes(graph.getNodeById(item), depth).map{ case (n, w) => n.getId -> w }
 
-  def within(item: Ii) = item.node match {
-    case None => Map()
-    case Some(aNode) => getNodes(aNode, Direction.INCOMING, 1).map{case (n, w) => new NeoIi(n, graph) -> w}
-  }
+  def within(item: Long, key: String) =
+    getNodes(graph.getNodeById(item), Direction.INCOMING, 1).map{ case (n, w) if n.hasProperty(key) => n.getId -> w }
+
 
 }

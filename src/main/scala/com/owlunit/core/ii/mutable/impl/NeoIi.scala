@@ -2,13 +2,14 @@ package com.owlunit.core.ii.mutable.impl
 
 import com.owlunit.core.ii.mutable.Ii
 import org.neo4j.graphdb._
+import com.weiglewilczek.slf4s.Logging
 
 /**
  * @author Anton Chebotaev
  *         Owls Proprietary
  */
 
-private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) extends Ii with Helpers {
+private[impl] class NeoIi( var node: Option[Node], val graph: GraphDatabaseService) extends Ii with Logging {
 
   def this(graph: GraphDatabaseService) = this(None, graph)
   def this(node: Node, graph: GraphDatabaseService) = this(Some(node), graph)
@@ -18,7 +19,8 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
 
   private var itemsOption: Option[Map[Ii, Double]] = None
   private var metaOption: Option[Map[String, String]] = None
-  private var indexedMeta: Set[String] = Set()
+
+  private var fulltextIndexedMeta: Set[String] = Set()
 
   def id = node.map(_.getId).getOrElse(0)
 
@@ -55,7 +57,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
     val tx = graph.beginTx()
     try {
 
-      // create backed node is there is need for one
+      // create backed node if there is need for one
       if (this.node.isEmpty) {
         this.node = Some(graph.createNode())
       }
@@ -85,7 +87,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
         (key, value) <- metaMap
       } {
         n.setProperty(key, value)
-        val index = if (indexedMeta.contains(key)) fulltextIndex else exactIndex
+        val index = if (fulltextIndexedMeta.contains(key)) fulltextIndex else exactIndex
         index.add(n, key, value)
       }
 
@@ -145,7 +147,9 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
       for {
         n <- this.node
       } {
+
         fulltextIndex.remove(n)
+        exactIndex.remove(n)
         val relationships = n.getRelationships.iterator()
         while (relationships.hasNext) {
           relationships.next().delete()
@@ -179,12 +183,29 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
     nodes.map {case (n, w) => new NeoIi(Some(n), graph) -> w}
   }
 
-  def setMeta(key: String, value: String, isIndexedFulltext: Boolean) = {
+  private def unindex(key: String) {
+    for (n <- this.node) {
+      val tx = graph.beginTx()
+      try {
+        fulltextIndex.remove(n, key)
+        exactIndex.remove(n, key)
+        tx.success()
+      } finally {
+        tx.finish()
+      }
+    }
+  }
+
+  def setMeta(key: String, value: String, isFulltext: Boolean) = {
+    if (meta.contains(key)) {
+      unindex(key)
+    }
+
     metaOption = Some(meta + (key -> value))
-    if (isIndexedFulltext) {
-      indexedMeta += key
+    if (isFulltext) {
+      fulltextIndexedMeta += key
     } else {
-      indexedMeta -= key
+      fulltextIndexedMeta -= key
     }
     this
   }
@@ -195,6 +216,7 @@ private[impl] class NeoIi(var node: Option[Node], graph: GraphDatabaseService) e
   }
 
   def removeMeta(key: String) = {
+    unindex(key)
     metaOption = Some(meta - key)
     this
   }
