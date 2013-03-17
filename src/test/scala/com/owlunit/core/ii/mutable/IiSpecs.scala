@@ -16,7 +16,7 @@ import utils.IiHelpers
 class IiSpecs extends Specification with Logging with IiHelpers {
   sequential // forces all tests to be run sequentially
 
-  val dbPath = "/tmp/neo4j_db"
+  val dbPath = "/tmp/neo4j_db_" + randomString
   var dao: IiService = null
 
   step {

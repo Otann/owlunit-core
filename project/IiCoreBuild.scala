@@ -14,7 +14,6 @@ object IiCoreBuild extends Build {
     id = "core",
     base = file("."),
     settings = Project.defaultSettings ++ Seq(
-      parallelExecution in Test := false,
       libraryDependencies ++= Seq(
         Dependency.neo4j,
         Dependency.neo4jREST,
@@ -23,7 +22,6 @@ object IiCoreBuild extends Build {
         Dependency.slf4s,
         Dependency.logback,
         Dependency.specs2
-//        Dependency.scalatest
         )
       )
     )
@@ -60,7 +58,6 @@ object IiCoreBuild extends Build {
     val slf4s       = "com.weiglewilczek.slf4s"   %% "slf4s"                % "1.0.7"
     val logback     = "ch.qos.logback"            %  "logback-classic"      % "1.0.6"  % "test"
     val specs2      = "org.specs2"                %% "specs2"               % "1.9"    % "test"
-    val scalatest   = "org.scalatest"             %% "scalatest"            % "1.9.1"  % "test"
 
   }
 
