@@ -1,18 +1,20 @@
 package com.owlunit.core.ii.mutable
 
+import com.tinkerpop.blueprints.{KeyIndexableGraph, TransactionalGraph, IndexableGraph, Graph}
+
 /**
  * @author Anton Chebotaev
  *         Owls Proprietary
  *
- *         Since this will be firstly and mostly used in couple with lift-mongo-record
- *         this is designed mutable
- *         As implementation is simple this can be used as backend for immutable version
+ * Since this will be firstly and mostly used in couple with lift-mongo-record this is designed mutable
+ * As implementation is simple, this can be used as backend for immutable version
  */
 
 
 trait Ii {
+  import Ii._
 
-  def id: Long
+  def id: IdType
 
   def save: Ii
   def delete()
@@ -28,5 +30,12 @@ trait Ii {
 
   def removeMeta(key: String): Ii
   def removeItem(component: Ii): Ii
+
+}
+
+object Ii {
+
+  type IdType = String
+  type IiGraph = Graph with TransactionalGraph
 
 }

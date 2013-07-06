@@ -7,13 +7,13 @@ import actors.LoadedMap
 import actors.LoadIndirect
 import actors.MapsWithId
 import actors.Similar
-import akka.actor.{Props, ActorSystem}
+import akka.actor.{ActorSystem, ActorContext, Props}
 import com.owlunit.core.ii.mutable.{IiDao, IiRecommender, Ii}
-import com.weiglewilczek.slf4s.Logging
-import akka.dispatch.Await
 import akka.pattern.ask
 import akka.util.Timeout
 import java.util.concurrent.TimeoutException
+import com.typesafe.scalalogging.slf4j.Logging
+import scala.concurrent.{ExecutionContext, Await}
 
 
 /**
@@ -23,16 +23,12 @@ import java.util.concurrent.TimeoutException
 //TODO: consider separate class parametrized by dao
 trait AkkaRecommender extends IiDao with IiRecommender with Logging {
 
-  def name: String
+  implicit def system: ActorSystem
+  import ExecutionContext.Implicits.global
 
-  implicit val system = ActorSystem()
   val config = Settings(system)
-  implicit val timeout: Timeout = Timeout(config.timeout)
 
-  override def shutdown() {
-    super.shutdown()
-    system.shutdown()
-  }
+  implicit val timeout: Timeout = Timeout(config.timeout)
 
   def getSimilar(a: Ii, key: String, limit: Int): List[(Ii, Double)] = recommend(a.items, key, limit)
 
@@ -45,8 +41,13 @@ trait AkkaRecommender extends IiDao with IiRecommender with Logging {
 
     try {
 
-      val idList = Await.result(future.mapTo[Similar], config.timeout)
-      idList.value.map{ case (id, w) => (this.load(id), w)}
+      Await.result(future.mapTo[Similar], config.timeout).value
+        .map{ case (id, w) => (this.load(id), w) }
+        .map {
+          case (Some(ii), w) => Some(ii -> w)
+          case _ => None
+        }
+        .flatten
 
     } catch {
 

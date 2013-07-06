@@ -1,10 +1,7 @@
 package com.owlunit.core.ii.mutable.impl.actors
 
 import akka.actor.{ActorLogging, Props, ActorRef, Actor}
-import com.owlunit.core.ii.mutable.IiDao
-import akka.util.duration._
-import akka.util.Timeout
-import akka.pattern.{ask, pipe}
+import com.owlunit.core.ii.mutable.{Ii, IiDao}
 
 
 /**
@@ -24,9 +21,9 @@ class SimilarFinder(dao: IiDao) extends Actor with ActorLogging {
 
   var origin: ActorRef = null
   var message = FindSimilar(Map(), "", 0)
-  var savedIndirect: Map[Long, Double] = Map()
+  var savedIndirect: Map[Ii.IdType, Double] = Map()
 
-  protected def receive = {
+  def receive = {
 
     case msg @ FindSimilar(query, _, _) => {
       origin = sender

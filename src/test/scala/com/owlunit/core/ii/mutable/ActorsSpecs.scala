@@ -9,11 +9,11 @@ import impl.actors.LoadedMap
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 import scala.sys.process._
-import com.weiglewilczek.slf4s.Logging
 import utils.{TestForwardParentRef, AkkaSpec, IiHelpers}
 import akka.testkit.{ImplicitSender, TestKit, TestActorRef}
 import akka.actor.{ActorSystem, Props}
 import org.specs2.specification.Scope
+import com.typesafe.scalalogging.slf4j.Logging
 
 /**
 * @author Anton Chebotaev
@@ -29,17 +29,19 @@ class ActorsSpecs
 
   val dbPath = "/tmp/neo4j_db_" + randomString
   var dao: IiService = null
+  var akka = ActorSystem()
 
   step {
-    dao = IiService.local(dbPath)
+    val
+    dao = IiService.local(dbPath, akka)
   }
 
   "Comparator" should {
     "return 100% on equal maps" in new AkkaSpec {
-      val map = Map(1L -> 1.0)
-      TestActorRef(Props[Comparator]) ! MapsWithId(1, map, map)
+      val map = Map("1" -> 1.0)
+      TestActorRef(Props[Comparator]) ! MapsWithId("1", map, map)
 
-      expectMsg(Likeness(1, 100.0))
+      expectMsg(Likeness("1", 100.0))
     }
   }
 
@@ -66,10 +68,10 @@ class ActorsSpecs
   "WeightMerger" should {
     "merge custom maps" in new AkkaSpec {
       val actor = TestForwardParentRef(Props(new MapsMerger(2, 2)))
-      actor ! LoadedMap(1, 1, Map(1L -> 2))
-      actor ! LoadedMap(1, 2, Map(1L -> 1))
+      actor ! LoadedMap("1", 1, Map("1" -> 2))
+      actor ! LoadedMap("1", 2, Map("1" -> 1))
 
-      expectMsg(Merged(Map(1L -> 2.0))) //TODO: check arithmetic
+      expectMsg(Merged(Map("1" -> 2.0))) //TODO: check arithmetic
     }
   }
 
@@ -119,7 +121,6 @@ class ActorsSpecs
   }
 
   step {
-    dao.shutdown()
     Seq("rm", "-rf", dbPath).!!
   }
 

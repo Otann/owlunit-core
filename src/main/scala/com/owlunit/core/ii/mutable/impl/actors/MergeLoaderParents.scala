@@ -1,18 +1,17 @@
 package com.owlunit.core.ii.mutable.impl.actors
 
-import akka.actor.{ActorLogging, ActorRef, Props, Actor}
+import akka.actor.{ActorLogging, Props, Actor}
 import com.owlunit.core.ii.mutable.IiDao
 import akka.routing.RoundRobinRouter
 
 
 /**
- * @author Anton Chebotaev
- *         Copyright OwlUnit
+ * Operated by LoadMergedParents message
+ * Initiates merger actor, which combines results from workers
+ * and reports back
+ * Returns results to parent as MergedParents
  *
- *         Operated by LoadMergedParents message
- *         Initiates merger actor, which combines results from workers
- *         and reports back
- *         Returns results to parent as MergedParents
+ * @author Anton Chebotaev
  */
 class MergeLoaderParents(dao: IiDao) extends Actor with ActorLogging {
 
@@ -21,7 +20,7 @@ class MergeLoaderParents(dao: IiDao) extends Actor with ActorLogging {
   val workers = context.actorOf(Props(new Loader(dao))
     .withRouter(RoundRobinRouter(nrOfInstances = settings.loadersParentsAmount)))
 
-  protected def receive = {
+  def receive = {
 
     case LoadMergedParents(query, key) => {
 

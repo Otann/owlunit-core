@@ -1,9 +1,9 @@
 package com.owlunit.core.ii.mutable
 
-import impl.{AkkaRecommender, NeoIiDao}
-import org.neo4j.graphdb.GraphDatabaseService
-import org.neo4j.kernel.EmbeddedGraphDatabase
-import org.neo4j.rest.graphdb.RestGraphDatabase
+import impl.{AkkaRecommender, BlueprintIiDao}
+import com.thinkaurelius.titan.core.TitanFactory
+import org.apache.commons.configuration.BaseConfiguration
+import akka.actor.{ActorSystem, ActorContext}
 
 /**
  * @author Anton Chebotaev
@@ -13,21 +13,26 @@ trait IiService extends IiDao with IiRecommender
 
 object IiService {
 
-  class RecommenderDao(graph: GraphDatabaseService, val name: String)
-    extends NeoIiDao(graph) with AkkaRecommender with IiService
+  class RecommenderDao(graph: Ii.IiGraph, val system: ActorSystem)
+    extends BlueprintIiDao(graph) with AkkaRecommender with IiService
 
-  def apply(graph: GraphDatabaseService, name: String): IiService = new RecommenderDao(graph, name)
+  def apply(graph: Ii.IiGraph, context: ActorSystem): IiService = new RecommenderDao(graph, context)
 
-  def local(path: String): IiService = apply(
-    new EmbeddedGraphDatabase(path),
-    alphanumericCamelCase("IiDaoLocal-%s" format path)
-  )
+  def local(path: String, context: ActorSystem): IiService = {
+    val conf = new BaseConfiguration()
+    conf.setProperty("storage.directory", path)
+    conf.setProperty("storage.backend", "berkeleyje")
+    val graph = TitanFactory.open(conf)
+    apply(graph, context)
+  }
 
-  def remote(url: String, login: String, password: String): IiService = apply(
-    new RestGraphDatabase(url, login, password),
-    alphanumericCamelCase("IiDaoRemote-%s" format url)
-  )
-
-  def alphanumericCamelCase(s: String) = s.split("[^a-zA-Z0-9]").map(_.capitalize).mkString("")
+  //TODO: fix
+  def remote(url: String, context: ActorSystem): IiService = {
+    val conf = new BaseConfiguration()
+    conf.setProperty("storage.backend", "cassandra")
+    conf.setProperty("storage.hostname", url)
+    val graph = TitanFactory.open(conf)
+    apply(graph, context)
+  }
 
 }

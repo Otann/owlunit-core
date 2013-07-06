@@ -1,11 +1,10 @@
 package com.owlunit.core.ii.mutable
 
 import org.specs2.mutable.{Before, After, Specification}
-import com.owlunit.core.ii.NotFoundException
 import scala.sys.process._
-import java.util.UUID
-import com.weiglewilczek.slf4s.Logging
 import utils.IiHelpers
+import com.typesafe.scalalogging.slf4j.Logging
+import akka.actor.ActorSystem
 
 /**
 * @author Anton Chebotaev
@@ -16,22 +15,24 @@ import utils.IiHelpers
 class IiSpecs extends Specification with Logging with IiHelpers {
   sequential // forces all tests to be run sequentially
 
-  val dbPath = "/tmp/neo4j_db_" + randomString
+  val dbPath = "/tmp/titan_" + randomString
   var dao: IiService = null
+  val akka = ActorSystem()
 
   step {
-    dao = IiService.local(dbPath)
+    dao = IiService.local(dbPath, akka)
   }
 
   "New Ii" should {
-    "have 0 id" in {
+    "have empty string id before save" in {
       val ii = dao.create
-      ii.id mustEqual 0
+      ii.id mustEqual ""
     }
     "not be loadable by id after delete" in {
       val saved = dao.create.save
       saved.delete()
-      dao.load(saved.id) must throwA[NotFoundException]
+      val loaded = dao.load(saved.id)
+      loaded must beNone
     }
   }
 
@@ -40,15 +41,16 @@ class IiSpecs extends Specification with Logging with IiHelpers {
       val (key, value) = randomKeyValue
 
       val saved = dao.create.setMeta(key, value).save
-      dao.load(saved.id).meta must havePair(key -> value)
+      dao.load(saved.id).get.meta must havePair(key -> value)
     }
     "load items" in {
-      val item1 = dao.load(dao.create.save.id)
-      val item2 = dao.load(dao.create.save.id)
+      val item1 = dao.load(dao.create.save.id).get
+      val item2 = dao.load(dao.create.save.id).get
+      val weight = 1.0
 
-      val saved = dao.create.setItem(item1, 1.0).save
-      val loaded = dao.load(saved.id).setItem(item2, 1.0).save
-      dao.load(loaded.id).items must havePair(item2 -> 1.0)
+      val saved = dao.create.setItem(item1, weight).save
+      val loaded = dao.load(saved.id).get.setItem(item2, weight).save
+      dao.load(loaded.id).get.items must havePair(item1 -> weight)
     }
     "keep having used Ii into non-empty ii" in {
       // create items
@@ -56,15 +58,15 @@ class IiSpecs extends Specification with Logging with IiHelpers {
       val b = createIi("persist used Ii into non-empty ii b")
 
       // make b used
-      getRandomIi.setItem(dao.load(b.id), 1.0).save
+      getRandomIi.setItem(dao.load(b.id).get, 1.0).save
 
       // make a non-empty
-      dao.load(a.id).setItem(getRandomIi, 1.0).save
+      dao.load(a.id).get.setItem(getRandomIi, 1.0).save
 
       // perform add
-      dao.load(a.id).setItem(dao.load(b.id), 239.0).save
+      dao.load(a.id).get.setItem(dao.load(b.id).get, 239.0).save
 
-      dao.load(a.id).items.size mustEqual 2
+      dao.load(a.id).get.items.size mustEqual 2
     }
   }
 
@@ -95,28 +97,28 @@ class IiSpecs extends Specification with Logging with IiHelpers {
 
       val saved = dao.create.setMeta(key, value).save
       val loaded = dao.search(key, value)
-      loaded must not contain(saved)
+      loaded must not contain saved
     }
 
     "remove fulltext index after new value set without it" in {
       val (key, value) = randomKeyValue
 
       var saved = dao.create.setMeta(key, value, isFulltext = true).save
-      saved = dao.load(saved.id)
+      saved = dao.load(saved.id).get
       saved.setMeta(key, randomString, isFulltext = false).save
 
       val loaded = dao.search(key, value)
-      loaded must not contain(saved)
+      loaded must not contain saved
     }
     "remove general index after new value set with fulltext" in {
       val (key, value) = randomKeyValue
 
       var saved = dao.create.setMeta(key, value, isFulltext = false).save
-      saved = dao.load(saved.id)
+      saved = dao.load(saved.id).get
       saved.setMeta(key, randomString, isFulltext = true).save
 
       val loaded = dao.load(key, value)
-      loaded must not contain(saved)
+      loaded must not contain saved
     }
   }
 
@@ -134,7 +136,7 @@ class IiSpecs extends Specification with Logging with IiHelpers {
     }
     "give zero recommendations for empty ii" in {
       val ii = dao.create.save
-      val loaded = dao.load(ii.id)
+      val loaded = dao.load(ii.id).get
       dao.recommend(Map(loaded -> 1), "any") must beEmpty
     }
     "give at least 1 recommendations for common leaf, filled meta" in {
@@ -158,7 +160,7 @@ class IiSpecs extends Specification with Logging with IiHelpers {
   }
 
   step {
-    dao.shutdown()
+    akka.shutdown()
     Seq("rm", "-rf", dbPath).!!
   }
 

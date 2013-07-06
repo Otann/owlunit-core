@@ -1,7 +1,7 @@
 package com.owlunit.core.ii.mutable.impl.actors
 
 import akka.actor.Actor
-import akka.event.Logging
+import com.owlunit.core.ii.mutable.Ii
 
 /**
  * @author Anton Chebotaev
@@ -11,13 +11,13 @@ import akka.event.Logging
  */
 class Comparator extends Actor {
 
-  protected def receive = {
+  def receive = {
     case MapsWithId(id, a, b) => sender ! Likeness(id, compareMaps(a, b))
   }
 
-  def compareMaps(a: Map[Long, Double], b: Map[Long, Double]): Double = {
+  def compareMaps(a: Map[Ii.IdType, Double], b: Map[Ii.IdType, Double]): Double = {
 
-    val union = Set[Long]() ++ a.keys ++ b.keys
+    val union = Set.empty[Ii.IdType] ++ a.keys ++ b.keys
 
     if (union.size == 0)
       return 0.0

@@ -1,19 +1,22 @@
 <configuration scan="true" scanPeriod="30 seconds">
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <!--<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>-->
-            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %yellow(%logger{25}) - %msg%n</pattern>
+            <!--<pattern>%date{ISO8601} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>-->
         </encoder>
     </appender>
 
-    <logger name="com.ning.http.client" level="OFF"/>
+
+    <logger name="akka" level="DEBUG"/>
+    <logger name="akka.event.slf4j" level="OFF"/>
+
+    <logger name="com.thinkaurelius.titan" level="WARN"/>
 
     <logger name="neo4j" level="INFO"/>
     <logger name="neo4j.neostore" level="OFF"/>
     <logger name="neo4j.xafactory" level="OFF"/>
 
-    <logger name="akka" level="OFF"/>
 
     <root level="debug">
         <appender-ref ref="STDOUT" />

@@ -4,14 +4,13 @@ import akka.actor.{ActorLogging, ActorRef, Actor}
 import com.owlunit.core.ii.mutable.IiDao
 
 /**
- * @author Anton Chebotaev
- *         Copyright OwlUnit
+ * Loads parents or indirect components, returns Map[Long, Double] to sender
  *
- *         Loads parents or indirect components, returns Map[Long, Double] to sender
+ * @author Anton Chebotaev
  */
 class Loader(dao: IiDao) extends Actor with ActorLogging {
 
-  protected def receive = {
+  def receive = {
 
     case LoadIndirect(id, weight, depth) =>
       sender ! LoadedMap(id, weight, dao.indirectComponents(id, depth))

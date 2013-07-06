@@ -2,7 +2,7 @@ package com.owlunit.core.ii.mutable.impl.actors
 
 import akka.actor.{Props, Actor}
 import akka.routing.RoundRobinRouter
-import com.owlunit.core.ii.mutable.IiDao
+import com.owlunit.core.ii.mutable.{Ii, IiDao}
 import collection.mutable
 
 /**
@@ -21,10 +21,10 @@ class Sorter(dao: IiDao) extends Actor {
 
   // State variables
   var countdown = 0
-  var result = mutable.ListBuffer[(Long, Double)]()
+  var result = mutable.ListBuffer[(Ii.IdType, Double)]()
 
-  var savedPattern: Map[Long, Double] = null
-  var savedCandidates: Map[Long, Double] = null
+  var savedPattern: Map[Ii.IdType, Double] = null
+  var savedCandidates: Map[Ii.IdType, Double] = null
   var candidatesTotal = 0.0
 
   def receive = {

@@ -1,6 +1,7 @@
 package com.owlunit.core.ii.mutable.impl.actors
 
 import akka.actor.{ActorLogging, Actor}
+import com.owlunit.core.ii.mutable.Ii
 
 /**
  * @author Anton Chebotaev
@@ -11,14 +12,14 @@ import akka.actor.{ActorLogging, Actor}
  */
 class MapsMerger(totalWeight: Double, amount: Int) extends Actor with ActorLogging {
 
-  val result = collection.mutable.Map[Long, Double]()
+  val result = collection.mutable.Map[Ii.IdType, Double]()
   var countdown = amount
 
   if (countdown == 0) {
     context.parent ! Merged(Map())
   }
 
-  protected def receive = {
+  def receive = {
 
     case LoadedMap(_, mapWeight, data) => {
       for ((id, itemWeight) <- data) {

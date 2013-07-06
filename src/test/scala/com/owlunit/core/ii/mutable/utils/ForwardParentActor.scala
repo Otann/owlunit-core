@@ -6,7 +6,7 @@ import akka.actor.{ActorRef, Props, Actor}
  * @author Anton Chebotaev
  *         Owls Proprietary
  *
- *         Forwards messages that actor sent to context.parent to origin
+ *         Forwards messages that actor sent to system.parent to origin
  */
 class ForwardParentActor(props: Props, origin: ActorRef) extends Actor {
 

@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
  * @author Anton Chebotaev
  *         Owls Proprietary
  *
- *         A tiny class that can be used as a Specs2 'context'.
+ *         A tiny class that can be used as a Specs2 'system'.
  */
 abstract class AkkaSpec extends TestKit(ActorSystem()) with After with ImplicitSender {
 

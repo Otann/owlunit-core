@@ -6,13 +6,12 @@ import akka.routing.RoundRobinRouter
 
 
 /**
- * @author Anton Chebotaev
- *         Copyright OwlUnit
+ * Operated by LoadMergedIndirect message
+ * Initiates merger actor, which combines results from workers
+ * and reports back
+ * Returns results to parent as MergedIndirect
  *
- *         Operated by LoadMergedIndirect message
- *         Initiates merger actor, which combines results from workers
- *         and reports back
- *         Returns results to parent as MergedIndirect
+ * @author Anton Chebotaev
  */
 class MergeLoaderIndirect(dao: IiDao) extends Actor {
 
@@ -21,7 +20,7 @@ class MergeLoaderIndirect(dao: IiDao) extends Actor {
   val workers = context.actorOf(Props(new Loader(dao))
     .withRouter(RoundRobinRouter(nrOfInstances = settings.loadersIndirectAmount)))
 
-  protected def receive = {
+  def receive = {
 
     case LoadMergedIndirect(query, depth) => {
 
