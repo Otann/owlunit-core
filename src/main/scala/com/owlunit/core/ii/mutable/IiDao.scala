@@ -17,7 +17,9 @@ trait IiDao {
 
   def load(id: IdType): Option[Ii]
   def load(key: String, value: String): Seq[Ii]
-  def search(key: String, queue: String): Seq[Ii]
+
+  def ensureIndex(key: String)
+  def ensureIndices(keys: String*)
 
   private[ii] def indirectComponents(item: IdType, depth: Int): Map[IdType, Double]
   private[ii] def within(item: IdType, key: String): Map[IdType, Double] // TODO: write tests for key

@@ -5,7 +5,7 @@ object IiCoreBuild extends Build {
 
   val buildSettings = Seq (
     organization := "com.owlunit",
-    version := "0.4-SNAPSHOT",
+    version := "0.4.1-SNAPSHOT",
     scalaVersion := "2.10.0"
   )
 
@@ -67,7 +67,8 @@ object IiCoreBuild extends Build {
     "com.typesafe"             %% "scalalogging-slf4j"   % "1.0.1",
     "ch.qos.logback"           %  "logback-classic"      % "1.0.6"  % "test",
     "com.typesafe.akka"        %% "akka-slf4j"           % V.akka   % "test",
-    "org.specs2"               %% "specs2"               % "1.13"   % "test"
+    "org.specs2"               %% "specs2"               % "1.13"   % "test",
+    "org.scalatest"            %% "scalatest"            % "1.9.1"  % "test"
 
   )
 

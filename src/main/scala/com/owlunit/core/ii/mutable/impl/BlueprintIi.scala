@@ -17,14 +17,8 @@ private[impl] class BlueprintIi( var node: Option[Vertex], val graph: Ii.IiGraph
   def this(graph: Ii.IiGraph) = this(None, graph)
   def this(node: Vertex, graph: Ii.IiGraph) = this(Some(node), graph)
 
-  //TODO: get or create indices?
-//  private def fulltextIndex = graph.getIndex(FulltextIndexName, classOf[Vertex])
-//  private def exactIndex = graph.getIndex(ExactIndexName, classOf[Vertex])
-
   private var itemsOption: Option[Map[Ii, Double]] = None
   private var metaOption: Option[Map[String, String]] = None
-
-  private var fulltextIndexedMeta: Set[String] = Set()
 
   def id = node match {
     case Some(n) if n.getId != null => n.getId.toString
@@ -59,17 +53,8 @@ private[impl] class BlueprintIi( var node: Option[Vertex], val graph: Ii.IiGraph
     }
   }
 
-  def setMeta(key: String, value: String, isFulltext: Boolean) = {
-    if (meta contains key) {
-      unindex(key)
-    }
-
+  def setMeta(key: String, value: String) = {
     metaOption = Some(meta + (key -> value))
-    if (isFulltext) {
-      fulltextIndexedMeta += key
-    } else {
-      fulltextIndexedMeta -= key
-    }
     this
   }
 
@@ -79,7 +64,6 @@ private[impl] class BlueprintIi( var node: Option[Vertex], val graph: Ii.IiGraph
   }
 
   def removeMeta(key: String) = {
-    unindex(key)
     metaOption = Some(meta - key)
     this
   }
@@ -102,18 +86,12 @@ private[impl] class BlueprintIi( var node: Option[Vertex], val graph: Ii.IiGraph
       vertex  <- this.node
       metaMap <- metaOption
     } {
-      for (key <- vertex.getPropertyKeys) {
-        if (!metaMap.contains(key)) {
-//          val value = vertex.getProperty(key)
-          vertex.removeProperty(key)
-          //TODO
-//          fulltextIndex.remove(key, value, vertex)
-//          exactIndex.remove(key, value, vertex)
-        }
-      }
+      vertex.getPropertyKeys
+        .filter(!metaMap.contains(_))
+        .foreach(vertex.removeProperty(_))
     }
 
-    // persist all meta to indexes
+    // persist all meta to properties
     // pass this part if no meta referenced
     for {
       vertex       <- this.node
@@ -121,44 +99,37 @@ private[impl] class BlueprintIi( var node: Option[Vertex], val graph: Ii.IiGraph
       (key, value) <- metaMap
     } {
       vertex.setProperty(key, value)
-//      val index = if (fulltextIndexedMeta.contains(key)) fulltextIndex else exactIndex //TODO: needs comment
-//      index.put(key, value, vertex)
     }
 
     // remove obsolete connections
     // pass this part if no items referenced
     for {
-      thisNode <- this.node
-      itemsMap <- itemsOption
+      thisNode   <- this.node
+      itemsMap   <- itemsOption
+      itemsNodes = itemsMap.keys.map(_.node).flatten.toSet
+      edge       <- thisNode.getEdges(Direction.OUT) if !itemsNodes.contains(edge.getVertex(Direction.IN))
     } {
-      val itemsNodes = itemsMap.keys.map(_.node).flatten.toSet
-
-      for {
-        edge <- thisNode.getEdges(Direction.OUT)
-        if !itemsNodes.contains(edge.getVertex(Direction.OUT))
-      } {
-        graph.removeEdge(edge)
-      }
+      graph.removeEdge(edge)
     }
 
     // persist all connections to relations
     // pass this part if no items referenced
     // NB: only for those which have been persisted once
     for {
-      thisNode              <- this.node
-      itemsMap              <- this.itemsOption
+      thisNode <- this.node
+      itemsMap <- this.itemsOption
       (item: BlueprintIi, weight) <- itemsMap
-      thatNode              <- item.node
+      thatNode <- item.node
     } {
 
       val edge = getEdge(thisNode, thatNode) match {
         case Some(value) => value
         case None => graph.addE(thisNode, thatNode, EdgeTitle)
       }
-      edge.setProperty(WeightPropertyName, weight)
+      edge.setProperty(WeightPropertyKey, weight)
     }
 
-    graph.commit() //TODO: check
+    graph.commit()
     this
   }
 
@@ -166,10 +137,6 @@ private[impl] class BlueprintIi( var node: Option[Vertex], val graph: Ii.IiGraph
     for {
       vertex <- this.node
     } {
-      logger.debug(s"deleted $this")
-      //TODO: remove indices
-//      fulltextIndex.remove(n)
-//      exactIndex.remove(n)
       vertex.getEdges(Direction.BOTH).map(graph.removeEdge(_))
       graph.removeVertex(vertex)
       graph.commit()
@@ -183,15 +150,11 @@ private[impl] class BlueprintIi( var node: Option[Vertex], val graph: Ii.IiGraph
   }
 
   private def getNodeItems(node: Vertex): Map[Ii, Double] = {
-    val nodes = getNodes(node, Direction.OUT, 1)
-    nodes.map {case (n, w) => new BlueprintIi(Some(n), graph) -> w}
-  }
-
-  private def unindex(key: String) {
-    //TODO: add indices back
-//    fulltextIndex.remove(n, key)
-//    exactIndex.remove(n, key)
-    graph.commit()
+    node.outE().toList.map(
+      edge => (edge.getVertex(Direction.IN), edge.getProperty(WeightPropertyKey).toString.toDouble)
+    ).map{
+      case (n, w) => new BlueprintIi(Some(n), graph) -> w
+    }.toMap
   }
 
   override def hashCode() = this.node.map(_.hashCode()).getOrElse(0)

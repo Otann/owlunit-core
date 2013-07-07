@@ -25,7 +25,7 @@ trait Ii {
   def meta: Map[String, String]
   def items: Map[Ii, Double]
 
-  def setMeta(key: String, value: String, isFulltext: Boolean = false): Ii
+  def setMeta(key: String, value: String): Ii
   def setItem(component: Ii, weight: Double): Ii
 
   def removeMeta(key: String): Ii
@@ -36,6 +36,6 @@ trait Ii {
 object Ii {
 
   type IdType = String
-  type IiGraph = Graph with TransactionalGraph
+  type IiGraph = Graph with KeyIndexableGraph with TransactionalGraph
 
 }

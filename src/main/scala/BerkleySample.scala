@@ -1,7 +1,5 @@
-import com.thinkaurelius.titan.core.{TitanGraph, TitanFactory}
-import com.typesafe.scalalogging.slf4j.Logging
-import org.apache.commons.configuration.BaseConfiguration
-import com.tinkerpop.blueprints.impls.tg.TinkerGraphFactory
+import com.owlunit.core.ii.mutable.Ii
+import com.thinkaurelius.titan.core.TitanFactory
 import com.tinkerpop.gremlin.scala._
 
 //TODO(anton): fill description
@@ -12,18 +10,33 @@ import com.tinkerpop.gremlin.scala._
  */
 object BerkleySample extends App {
 
-  // Default
-  val graph = TitanFactory.open("/tmp/graph")
-  val v1 = graph.addV()
-  graph.commit()
-  println(s"created $v1")
+  val label = "w"
+  val property = "weight"
 
-  graph.removeVertex(v1)
-  graph.commit()
-  println(s"removed")
+  def addNode(name: String) = {
+    val vertex = graph.addV()
+    vertex.setProperty("name", name)
+    graph.commit()
+    vertex
+  }
 
-  val v2 = graph.getVertex(v1.getId)
-  println(s"loaded $v2")
+  val graph: Ii.IiGraph = TitanFactory.open("/tmp/graph")
 
-  graph.shutdown()
+  try {
+    val v1 = addNode("1")
+    val v2 = addNode("2")
+    val v3 = addNode("3")
+    val v4 = addNode("4")
+
+    graph.addE(v1, v2, label).setProperty(property, 12)
+    graph.addE(v1, v3, label).setProperty(property, 13)
+    graph.addE(v1, v4, label).setProperty(property, 14)
+
+    graph.addE(v3, v4, label).setProperty(property, 34)
+
+  } finally {
+    graph.shutdown()
+  }
+
+
 }
