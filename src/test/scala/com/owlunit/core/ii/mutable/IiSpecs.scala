@@ -50,7 +50,7 @@ class IiSpecs extends Specification with Logging with IiHelpers {
       val item1 = dao.load(dao.create.save.id).get
       val item2 = dao.load(dao.create.save.id).get
       val weight = 1.0
-      
+
       val saved = dao.create.setItem(item1, weight).save
       val loaded = dao.load(saved.id).get.setItem(item2, weight).save
 
@@ -87,16 +87,28 @@ class IiSpecs extends Specification with Logging with IiHelpers {
   }
 
   "Recommender" should {
-    "find indirect component, depth 1" in {
+    "load parents of component" in {
       val leaf = dao.create.save
       val root = dao.create.setItem(leaf, 1.0).save
-      dao.indirectComponents(root.id, 1).size shouldEqual 1
+      val within = dao.within(leaf.id)
+      within.size shouldEqual 1
+      within should havePair (root.id -> 1.0)
     }
-    "find indirect component, depth 2" in {
+    "load indirect component, depth 1" in {
+      val leaf = dao.create.save
+      val root = dao.create.setItem(leaf, 1.0).save
+      val indirect = dao.indirectComponents(root.id, 1)
+      indirect.size shouldEqual 1
+      indirect should havePair (leaf.id -> 1.0)
+    }
+    "load indirect component, depth 2" in {
       val leaf = dao.create.save
       val middle = dao.create.setItem(leaf, 1.0).save
       val root = dao.create.setItem(middle, 1.0).save
-      dao.indirectComponents(root.id, 2).size shouldEqual 2
+      val indirect = dao.indirectComponents(root.id, 2)
+      indirect.size shouldEqual 2
+      indirect should havePair (middle.id -> 1.0)
+      indirect should havePair (leaf.id -> 1.5) //TODO: this is not right that leaf is higher rated than middle
     }
     "give zero recommendations for empty ii" in {
       val ii = dao.create.save

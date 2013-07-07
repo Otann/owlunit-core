@@ -1,6 +1,6 @@
 package com.owlunit.core.ii.mutable.impl.actors
 
-import akka.actor.{ActorLogging, ActorRef, Actor}
+import akka.actor.{ActorLogging, Actor}
 import com.owlunit.core.ii.mutable.IiDao
 
 /**
@@ -16,7 +16,7 @@ class Loader(dao: IiDao) extends Actor with ActorLogging {
       sender ! LoadedMap(id, weight, dao.indirectComponents(id, depth))
 
     case LoadParents(id, weight, key) =>
-      sender ! LoadedMap(id, weight, dao.within(id, key))
+      sender ! LoadedMap(id, weight, dao.within(id))
 
   }
 

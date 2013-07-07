@@ -14,8 +14,6 @@ import com.tinkerpop.gremlin.scala._
 
 private[mutable] class BlueprintIiDao(val graph: IiGraph) extends IiDao {
 
-  val depthDefaultQuantifier = 1
-
   // Implementations
 
   def ensureIndex(key: String) {
@@ -69,22 +67,23 @@ private[mutable] class BlueprintIiDao(val graph: IiGraph) extends IiDao {
 
     var pipeline = start.outE().inV()
     for (i <- 2 to exactDepth) pipeline = pipeline.outE().inV()
+    val listed = pipeline.path.toList
 
     for {
-      pipe <- pipeline.path.toList
+      pipe <- listed
     } {
       // Collector for weight of last element in pipe
       var weight = 0.0
 
-      // With each level, weight is divided by 2^depth
-      var depthQuantifier = depthDefaultQuantifier
+      // With each level, weight is divided by 2^depth, starting from leaf
+      var depthQuantifier = 1.0 / (1 << listed.size)
 
       for (element <- pipe) {
         element match {
 
           // For each edge, calculate proportional weight and add to total
           case edge: Edge => {
-            depthQuantifier <<= 1
+            depthQuantifier *= 2
             val edgeWeight = edge.getProperty(WeightPropertyKey).toString.toDouble
             weight += edgeWeight / depthQuantifier
           }
@@ -101,8 +100,8 @@ private[mutable] class BlueprintIiDao(val graph: IiGraph) extends IiDao {
     result
   }
 
-  def within(id: String, key: String) = {
-    graph.getVertex(id).outE().toList.map {
+  def within(id: String) = {
+    graph.getVertex(id).inE().toList.map {
       edge => (edge.getVertex(Direction.OUT), edge.getProperty(WeightPropertyKey).toString.toDouble)
     }.map{
       case (n, w) => n.getId.toString -> w

@@ -22,6 +22,6 @@ trait IiDao {
   def ensureIndices(keys: String*)
 
   private[ii] def indirectComponents(item: IdType, depth: Int): Map[IdType, Double]
-  private[ii] def within(item: IdType, key: String): Map[IdType, Double] // TODO: write tests for key
+  private[ii] def within(item: IdType): Map[IdType, Double] // TODO: write tests for key
 
 }
