@@ -1,5 +1,6 @@
 import sbt._
 import sbt.Keys._
+import sbt.Tests.Setup
 
 object IiCoreBuild extends Build {
 
@@ -14,7 +15,13 @@ object IiCoreBuild extends Build {
     base = file("."),
     settings = Project.defaultSettings ++ Seq(
         libraryDependencies ++= dependencies,
-        resolvers ++= customResolvers
+        resolvers ++= customResolvers,
+
+        // This is used if you don't want parallel execution
+        testOptions += Setup( cl => cl.loadClass("org.slf4j.LoggerFactory")
+          .getMethod("getLogger",cl.loadClass("java.lang.String"))
+          .invoke(null,"ROOT")
+        )
       )
     )
 
@@ -64,8 +71,8 @@ object IiCoreBuild extends Build {
     "org.neo4j"                %  "neo4j-rest-graphdb"   % V.neo4j,
 
     // Logging
+    "ch.qos.logback"           %  "logback-classic"      % "1.0.7"  % "test",
     "com.typesafe"             %% "scalalogging-slf4j"   % "1.0.1",
-    "ch.qos.logback"           %  "logback-classic"      % "1.0.6"  % "test",
     "com.typesafe.akka"        %% "akka-slf4j"           % V.akka   % "test",
     "org.specs2"               %% "specs2"               % "1.13"   % "test",
     "org.scalatest"            %% "scalatest"            % "1.9.1"  % "test"
