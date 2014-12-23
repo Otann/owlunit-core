@@ -6,7 +6,7 @@ It's main purpose is to store so called `Ii`s (Information Items), their connect
 
 And basing on that feature recommendation engine could be implemented, where profile is described as `Ii` with connections to preferences and current mood as `Ii`s that describes movie genre or food preferences. Then traversal performed and each found item compared to profile and query.
 
-# How to see it
+# Practical points
 
 Basicly I used most of this code for [Talk to IO project](http://talkto.io) I've been working on in 2014.
 You can try to following steps below to provide artifact for another code in neighbour repository [owlunit-web](http://github.com/otann/owlunit-web)
