@@ -8,7 +8,7 @@ And basing on that feature recommendation engine could be implemented, where pro
 
 # Practical points
 
-Basicly I used most of this code for [Talk to IO project](http://talkto.io) I've been working on in 2014.
+Basicly I used most of this code for [Talk to IO project](http://talkto.io) I've been working on in 2014.  
 You can try to following steps below to provide artifact for another code in neighbour repository [owlunit-web](http://github.com/otann/owlunit-web)
 
 # How to use
